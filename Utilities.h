@@ -31,7 +31,26 @@ extern const double pi;
 #define Int2Char(charBuff, intValue)		{ *(signed int*)buff = *intValue; }
 // signed int to 4 bytes
 #define Char2Int(intValue, charBuff)		{ *(signed int *)intValue = *(signed int *)charBuff; }
+typedef struct
+{
+    float pitch;			/*uinit: ° (deg)*/
+    float roll;
+    float yaw;
+}RobotAngle;
 
+typedef struct
+{
+    float x;			/*uinit:  m */
+    float y;
+    float z;
+}RobotPosition;
+
+typedef struct
+{
+    float x;			/*uinit: m/s */
+    float y;
+    float w;
+}RobotSpeed;
 
 enum _ELMO_MODE
 {
@@ -42,7 +61,17 @@ enum _ELMO_MODE
     POSITON_MODE,
 };
 
-
+struct _CMD_FRAME
+{
+   unsigned char header[2];
+   unsigned char cmd[2]; // command
+   char cmd_para[4];     // parameters of the command, [0]: coasen direction; [1]: dir_1, 1 or -1; [2]: dir_2, 1 or -1;
+   signed int coasen_sp; // coasening speed
+   signed int move_sp;   // moving speed
+   signed short turn_pa; // pa for turning angle
+   signed short check;
+};
+typedef _CMD_FRAME CMD_frame;
 void Char2Float(float* f, unsigned char* buff);
 void Float2Char(unsigned char *buff, float *f);
 #endif // UTILITIES_H

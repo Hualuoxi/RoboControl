@@ -2,8 +2,26 @@
 
 Robot::Robot()
 {
+    InitRobot();
+    mTimer = new QTimer();
+    mTimer->setInterval(1000);
+    connect(mTimer,&QTimer::timeout,this,&Robot::showAngle);
+    mTimer->start();
+
+}
+
+void Robot::InitRobot()
+{
     mCAN = new CAN("can1");
     mCAN->startRcv(); //
+    mGyro = new Gyro();
+    mGyroQThread = new QThread(this);
+    mGyro->moveToThread(mGyroQThread);
+    mGyroQThread->start();
+    mClient = new Clinet(this,20020);
+    mClinetQThread = new QThread(this);
+    mClient->moveToThread(mClinetQThread);
+    mClinetQThread->start();
     Cutter_1 = new Motor(1,SPEED_MODE);
     Cutter_2 = new Motor(2,SPEED_MODE);
     Wheel_1 = new Motor(3,SPEED_MODE);
@@ -11,6 +29,7 @@ Robot::Robot()
     Turn_1 = new Motor(5,POSITON_MODE);
     Turn_2 = new Motor(6,POSITON_MODE);
     //将各电机的发送信号与CAN发送槽连接
+
     connect(Cutter_1,SIGNAL(sendCANMsg(can_frame)),mCAN,SLOT(Transmit(can_frame)));
     connect(Cutter_2,SIGNAL(sendCANMsg(can_frame)),mCAN,SLOT(Transmit(can_frame)));
     connect(Wheel_1,SIGNAL(sendCANMsg(can_frame)),mCAN,SLOT(Transmit(can_frame)));
@@ -26,4 +45,10 @@ Robot::Robot()
     Wheel_2->initMotor();
     Turn_1->initMotor();
     Turn_2->initMotor();
+}
+
+void Robot::showAngle()
+{
+    AngleNow=mGyro->getAngleNow();
+    qDebug()<<"Yaw: "<<AngleNow.yaw<<" Roll:"<<AngleNow.roll<<" Pitch:"<<AngleNow.pitch;
 }

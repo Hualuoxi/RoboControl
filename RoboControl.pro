@@ -1,7 +1,8 @@
 #DEFINES += QT_DEPRECATED_WARNINGS
-#CONFIG += serialport
+QT += serialport
 QT -= gui
 QT += core
+QT += network
 target.path = /root/robotapp
 INSTALLS += target
 CONFIG += c++11
@@ -9,6 +10,7 @@ CONFIG += c++11
 HEADERS += \
     Utilities.h \
     can.h \
+    clinet.h \
     driver.h \
     gyro.h \
     main.h \
@@ -19,6 +21,7 @@ HEADERS += \
 SOURCES += \
     Utilities.cpp \
     can.cpp \
+    clinet.cpp \
     driver.cpp \
     gyro.cpp \
     main.cpp \
