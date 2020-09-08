@@ -18,6 +18,8 @@ class CAN_RcvThread :public QObject
     Q_OBJECT
 public:
     CAN_RcvThread(QObject *parent = 0) ;
+signals:
+    void setMotorCurrent_sig(int id,float value);
 public slots:
     void RcvMegThread(int s);
     void stopRcvThread();
@@ -98,9 +100,11 @@ private:
 signals:
     void startRcvThread(int);
     void stopRcvThread();
+    void setMotorCurrent_sig(int id,float value);
 
 public slots:
     void Transmit(can_frame pFrame);
+    void setMotorCurrent_slot(int id,float value);
 
 };
 

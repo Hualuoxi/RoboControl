@@ -18,7 +18,7 @@ public:
     void ExeCMD(char const* cmd, float value, short index = 0);
     void QueryCMD(char const* cmd, short index = 0);
 private:
-    u8 mCANId;
+    int mCANId;
 signals:
     void sendCANMsg(can_frame Tx_Msg);
 };

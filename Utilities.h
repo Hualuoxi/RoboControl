@@ -20,12 +20,27 @@ extern const double pi;
 /*****************  Elmo_CAN_ID  *********************/
 #define ELMO_CTRL_ID_BASE   0x300
 #define ELMO_FBCK_ID_BASE   0x280
-#define ELMO_COARSEN_1      1
-#define ELMO_COARSEN_2      2
-#define ELMO_WALKER_1       3
-#define ELMO_WALKER_2       4
-#define ELMO_NUM            4
-/*****************  Elmo_MODE  *********************/
+#define ELMO_CUTTER_1      1
+#define ELMO_CUTTER_2      2
+#define ELMO_WHEEL_1       3
+#define ELMO_WHEEL_2       4
+#define ELMO_TURN_1        5
+#define ELMO_TURN_2        6
+#define ELMO_NUM           6
+
+#define ELMO_CUTTER_1_TX    (ELMO_CTRL_ID_BASE+ELMO_CUTTER_1)
+#define ELMO_CUTTER_2_TX    (ELMO_CTRL_ID_BASE+ELMO_CUTTER_2)
+#define ELMO_WHEEL_1_TX     (ELMO_CTRL_ID_BASE+ELMO_WHEEL_1)
+#define ELMO_WHEEL_2_TX     (ELMO_CTRL_ID_BASE+ELMO_WHEEL_2)
+#define ELMO_TURN_1_TX      (ELMO_CTRL_ID_BASE+ELMO_TURN_1)
+#define ELMO_TURN_2_TX      (ELMO_CTRL_ID_BASE+ELMO_TURN_2)
+
+#define ELMO_CUTTER_1_RX    (ELMO_FBCK_ID_BASE+ELMO_CUTTER_1)
+#define ELMO_CUTTER_2_RX    (ELMO_FBCK_ID_BASE+ELMO_CUTTER_2)
+#define ELMO_WHEEL_1_RX     (ELMO_FBCK_ID_BASE+ELMO_WHEEL_1)
+#define ELMO_WHEEL_2_RX     (ELMO_FBCK_ID_BASE+ELMO_WHEEL_2)
+#define ELMO_TURN_1_RX      (ELMO_FBCK_ID_BASE+ELMO_TURN_1)
+#define ELMO_TURN_2_RX      (ELMO_FBCK_ID_BASE+ELMO_TURN_2)
 
 // convert 4 bytes to signed int
 #define Int2Char(charBuff, intValue)		{ *(signed int*)buff = *intValue; }
@@ -37,6 +52,20 @@ typedef struct
     float roll;
     float yaw;
 }RobotAngle;
+
+typedef struct
+{
+    float Kp;
+    float Ki;
+    float Kd;
+    float Ek[3];
+    float ErrSum;
+    float OutPut;
+
+
+    float ThresHold;
+    float MaxOut;
+}RobotPID;
 
 typedef struct
 {
@@ -61,6 +90,26 @@ enum _ELMO_MODE
     POSITON_MODE,
 };
 
+
+#pragma pack(1)
+struct _ROBOT_DATA_FRAME
+{
+   u8 header[2];
+   u8 status[2];
+   int16_t data1;
+   int16_t data2;
+   int16_t data3;
+   int16_t data4;
+   int16_t data5;
+   int16_t data6;
+   int16_t data7;
+   int16_t data8;
+   int16_t data9;
+   int16_t data10;
+   int16_t check;
+};
+typedef _ROBOT_DATA_FRAME RobotFadebck_frame;
+
 struct _CMD_FRAME
 {
    unsigned char header[2];
@@ -72,6 +121,8 @@ struct _CMD_FRAME
    signed short check;
 };
 typedef _CMD_FRAME CMD_frame;
+
+#pragma pack()
 void Char2Float(float* f, unsigned char* buff);
 void Float2Char(unsigned char *buff, float *f);
 #endif // UTILITIES_H

@@ -31,8 +31,16 @@ void Motor::SetMode(u_char mode)
 
 void Motor::Go(float speed)
 {
+    this->speed=speed;
     EnableMotor(true);
     mDriver->ExeCMD("JV", speed);
+    mDriver->ExeCMD("BG");
+}
+
+void Motor::RunByPos(int position)
+{
+    EnableMotor(true);
+    mDriver->ExeCMD("PA", position);
     mDriver->ExeCMD("BG");
 }
 

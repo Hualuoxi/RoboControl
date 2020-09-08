@@ -62,6 +62,9 @@ USART::USART(const char * dev)
 USART::~USART()
 {
     close(fd);
+    if(mQThread)
+        mQThread->quit();
+    mQThread->wait();
 }
 
 int USART::SetBaudrate(u8 baudrate)

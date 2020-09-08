@@ -220,7 +220,6 @@ int Gyro::calc_checksum(unsigned char *data, unsigned short len, unsigned short 
 
 RobotAngle Gyro::getAngleNow()
 {
-    qDebug()<<"getAngleNow"<<QThread::currentThread();
     QMutexLocker AngleNow_MutexLocker(&AngleNow_Mutex);
     return AngleNow;
 }
@@ -233,11 +232,15 @@ void Gyro::setAngleNow_slot(QVector<u8>a)
     res = analysis_data(&a[0], a.length());
     if(res == 0 || res == 1)
     {
-        qDebug()<<"setAngleNow_slot"<<QThread::currentThread();
         QMutexLocker AngleNow_MutexLocker(&AngleNow_Mutex);
-        AngleNow.yaw = g_output_info.yaw;
-        AngleNow.roll = g_output_info.roll;
-        AngleNow.pitch = g_output_info.pitch;
+        AngleNow.yaw = g_output_info.yaw-AngleRef.yaw;
+        AngleNow.roll = g_output_info.roll-AngleRef.roll;
+        AngleNow.pitch = g_output_info.pitch-AngleRef.pitch;
+        if(SvRefAng)
+        {
+            AngleRef=AngleNow;
+            SvRefAng = false;
+        }
 //        qDebug()<<"Yaw: "<<AngleNow.yaw<<"roll: "<<AngleNow.roll<<"pitch: "<<AngleNow.pitch;
     }
 //    else

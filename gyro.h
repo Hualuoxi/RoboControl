@@ -123,8 +123,10 @@ public:
 public:
     protocol_info_t g_output_info;
 private:
+    bool SvRefAng=true;
     USART *mUSART;
     RobotAngle AngleNow;
+    RobotAngle AngleRef;
     QMutex AngleNow_Mutex;
     int res;
 public slots:

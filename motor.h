@@ -10,12 +10,23 @@ public:
     void EnableMotor(bool bAction);
     void SetMode(u8 mode);
     void Go(float speed);
+    void RunByPos(int position);
     void Stop();
     void StopByST();
     void QueryCurrent();
+    void setMotorCurrent(float value){
+        current = value;}
+    float getMotorCurrent(){
+        return current;}
+    void setMotorSpeed(float value){
+        speed=value;
+    }
+    float getMotorSpeed(){
+        return speed;
+    }
+
 private:
     Driver *mDriver;
-private:
     float speed;
     float current;
     int position;

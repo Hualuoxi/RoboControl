@@ -52,13 +52,16 @@ CAN::CAN(const char * CANx)
 
     connect(mQThread, &QThread::finished, mRcvThread, &QObject::deleteLater);
     connect(mQThread, &QThread::finished, mQThread, &QThread::deleteLater);
-    connect(this, SIGNAL(startRcvThread(int)), mRcvThread, SLOT(RcvMegThread(int)));
-    connect(this, SIGNAL(stopRcvThread()), mRcvThread, SLOT(stopRcvThread()));
+    connect(this, &CAN::startRcvThread, mRcvThread, &CAN_RcvThread::RcvMegThread);
+    connect(this, &CAN::stopRcvThread, mRcvThread, &CAN_RcvThread::stopRcvThread);
     mQThread->start();
+
+    connect(mRcvThread,&CAN_RcvThread::setMotorCurrent_sig,this,&CAN::setMotorCurrent_slot);
 
 }
 
 CAN::~CAN() {
+    stop();
     if(mQThread)
         mQThread->quit();
     mQThread->wait();
@@ -267,6 +270,11 @@ void CAN::stopRcv()
     emit stopRcvThread();
 }
 
+void CAN::setMotorCurrent_slot(int id,float value)
+{
+    emit setMotorCurrent_sig(id,value);
+}
+
 CAN_RcvThread::CAN_RcvThread(QObject *parent )
 {
 
@@ -284,35 +292,14 @@ void CAN_RcvThread::RcvMegThread(int s)
         qDebug()<<byte;
         if(byte>0)
         {
-            qDebug()<<hex<<rx_msg->can_id;
-            qDebug()<<hex<<rx_msg->can_dlc;
-            qDebug()<<hex<<rx_msg->data[0];
-            qDebug()<<hex<<rx_msg->data[1];
-            qDebug()<<hex<<rx_msg->data[2];
             if(rx_msg->can_id > ELMO_FBCK_ID_BASE && rx_msg->can_id <= ELMO_FBCK_ID_BASE + ELMO_NUM) // coarsening motor message
             {
                 if('I' == rx_msg->data[0] && 'Q' == rx_msg->data[1]) // query current
                 {
                     float value = 0;
                     Char2Float(&value, &rx_msg->data[4]);
-
-                    // for sending to client
-//                    pthread_mutex_lock(&mutex_4_socket_send_dat);
-//                    if(rx_msg->can_id == ELMO_FBCK_ID_BASE + ELMO_COARSEN_1) {
-//                        g_datMsg.data1 = short(value * 1000);
-//                    }
-//                    else if(rx_msg->can_id == ELMO_FBCK_ID_BASE + ELMO_COARSEN_2) {
-//                        g_datMsg.data2 = short(value * 1000);
-//                    }
-//                    else if(rx_msg->can_id == ELMO_FBCK_ID_BASE + ELMO_WALKER_1) {
-//                        g_datMsg.data3 = short(value * 1000);
-//                    }
-//                    else if(rx_msg->can_id == ELMO_FBCK_ID_BASE + ELMO_WALKER_2) {
-//                        g_datMsg.data4 = short(value * 1000);
-//                    }
-//                    pthread_mutex_unlock(&mutex_4_socket_send_dat);
-
-                    // cout << "elmo_id = " << rx_msg->can_id << ", current = " << value << endl;
+                    emit setMotorCurrent_sig(rx_msg->can_id,value);
+                    qDebug() << "elmo_id = " << rx_msg->can_id << ", current = " << value << endl;
                 }
                 else if('P' == rx_msg->data[0] && 'X' == rx_msg->data[1]){ // query px
                     int value = 0;
