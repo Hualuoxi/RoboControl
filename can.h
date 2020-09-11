@@ -19,7 +19,9 @@ class CAN_RcvThread :public QObject
 public:
     CAN_RcvThread(QObject *parent = 0) ;
 signals:
-    void setMotorCurrent_sig(int id,float value);
+    void setMotorCur_sig(u8 id,float value);
+    void setMotorSpd_sig(u8 id,float value);
+    void setMotorPos_sig(u8 id,int value);
 public slots:
     void RcvMegThread(int s);
     void stopRcvThread();
@@ -98,13 +100,17 @@ private:
     u8 FlagSendPthread, FlagRecvPthread;
 
 signals:
-    void startRcvThread(int);
+    void startRcvThread(int s);
     void stopRcvThread();
-    void setMotorCurrent_sig(int id,float value);
+    void setMotorCur_sig(u8 id,float value);
+    void setMotorPos_sig(u8 id,int value);
+    void setMotorSpd_sig(u8 id,float value);
 
 public slots:
     void Transmit(can_frame pFrame);
-    void setMotorCurrent_slot(int id,float value);
+    void setMotorCur_slot(u8 id,float value);
+    void setMotorPos_slot(u8 id,int value);
+    void setMotorSpd_slot(u8 id,float value);
 
 };
 

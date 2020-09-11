@@ -42,6 +42,11 @@ extern const double pi;
 #define ELMO_TURN_1_RX      (ELMO_FBCK_ID_BASE+ELMO_TURN_1)
 #define ELMO_TURN_2_RX      (ELMO_FBCK_ID_BASE+ELMO_TURN_2)
 
+
+const float Leg_Reduction[6]= {21.0f,21.0f,19.2f,21.0f,21.0f,21.0f};
+
+
+
 // convert 4 bytes to signed int
 #define Int2Char(charBuff, intValue)		{ *(signed int*)buff = *intValue; }
 // signed int to 4 bytes
@@ -52,6 +57,17 @@ typedef struct
     float roll;
     float yaw;
 }RobotAngle;
+
+/*
+ * @brief 位移速度加速度冲击结构体
+ */
+struct XVAS
+{
+    double x;
+    double v;
+    double a;
+    double s;
+};
 
 typedef struct
 {
@@ -88,6 +104,17 @@ enum _ELMO_MODE
     MICRO_STEP_MODE,
     DOUBLE_FEEDBACK_POSTION_MODE,
     POSITON_MODE,
+};
+
+
+enum MOVESTATUS
+{
+    STOP = 0,
+    RUN,
+    TURNRIGHT,
+    TURNLEFT,
+    ROTATION,
+    BIPEDRUN,
 };
 
 

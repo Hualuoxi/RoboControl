@@ -12,12 +12,11 @@ void Driver::InitElmo()
     frame.can_id = 0;
     frame.can_dlc = 8;
     frame.data[0] = 1;
+    frame.data[1] = mCANId-ELMO_CTRL_ID_BASE;
     for(int i = 1; i < 8; i++){
         frame.data[i] = 0;
     }
-    emit sendCANMsg(frame);
-
-
+    emit sendCANMsg_sig(frame);
 }
 
 void Driver::ExeCMD(char const* cmd)
@@ -30,7 +29,7 @@ void Driver::ExeCMD(char const* cmd)
     frame.data[1] = cmd[1];
     frame.data[2] = 0;
     frame.data[3] = 0;
-    emit sendCANMsg(frame);
+    emit sendCANMsg_sig(frame);
 }
 
 void Driver::ExeCMD(char const* cmd, int value, short index)
@@ -50,7 +49,7 @@ void Driver::ExeCMD(char const* cmd, int value, short index)
     frame.data[7] = (value >> 24) & 0x00FF;
     // ENCODE_INT2CHAR(&value, &frame.data[4]);
 
-    emit sendCANMsg(frame);
+    emit sendCANMsg_sig(frame);
 }
 
 void Driver::ExeCMD(char const* cmd, float value, short index)
@@ -62,13 +61,14 @@ void Driver::ExeCMD(char const* cmd, float value, short index)
     frame.data[0] = cmd[0];
     frame.data[1] = cmd[1];
     frame.data[2] = (index >> 0) & 0x00FF;
-    frame.data[3] = ((index >> 8) & 0x003F + 0x80);
-    unsigned char* pValue = (unsigned char*)(&value);
-    frame.data[4] = pValue[0];
-    frame.data[5] = pValue[1];
-    frame.data[6] = pValue[2];
-    frame.data[7] = pValue[3];
-    emit sendCANMsg(frame);
+    frame.data[3] = (((index >> 8) & 0x003F) | 0x80);
+    u16 f_c[2];
+    *(float*)f_c = *(&value);
+    frame.data[4] = (f_c[0]>>0&0x00ff);
+    frame.data[5] = ((f_c[0]>>8)&0x00ff);
+    frame.data[6] = (f_c[1]>>0&0x00ff);
+    frame.data[7] = ((f_c[1]>>8)&0x00ff);
+    emit sendCANMsg_sig(frame);
 }
 
 void Driver::QueryCMD(char const* cmd, short index)
@@ -81,5 +81,5 @@ void Driver::QueryCMD(char const* cmd, short index)
     frame.data[1] = cmd[1];
     frame.data[2] = (index >> 0) & 0x00FF;
     frame.data[3] = (((index >> 8) & 0x00FF) | 0x40);
-    emit sendCANMsg(frame);
+    emit sendCANMsg_sig(frame);
 }

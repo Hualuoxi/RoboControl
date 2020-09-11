@@ -50,13 +50,18 @@ CAN::CAN(const char * CANx)
     mRcvThread = new CAN_RcvThread;
     mRcvThread->moveToThread(mQThread);
 
+    qRegisterMetaType<can_frame>("can_frame");
+    qRegisterMetaType<u8>("u8");
     connect(mQThread, &QThread::finished, mRcvThread, &QObject::deleteLater);
     connect(mQThread, &QThread::finished, mQThread, &QThread::deleteLater);
     connect(this, &CAN::startRcvThread, mRcvThread, &CAN_RcvThread::RcvMegThread);
     connect(this, &CAN::stopRcvThread, mRcvThread, &CAN_RcvThread::stopRcvThread);
+    connect(mRcvThread,&CAN_RcvThread::setMotorCur_sig,this,&CAN::setMotorCur_slot);
+    connect(mRcvThread,&CAN_RcvThread::setMotorSpd_sig,this,&CAN::setMotorSpd_slot);
+    connect(mRcvThread,&CAN_RcvThread::setMotorPos_sig,this,&CAN::setMotorPos_slot);
     mQThread->start();
 
-    connect(mRcvThread,&CAN_RcvThread::setMotorCurrent_sig,this,&CAN::setMotorCurrent_slot);
+
 
 }
 
@@ -270,10 +275,21 @@ void CAN::stopRcv()
     emit stopRcvThread();
 }
 
-void CAN::setMotorCurrent_slot(int id,float value)
+void CAN::setMotorCur_slot(u8 id,float value)
 {
-    emit setMotorCurrent_sig(id,value);
+    emit setMotorCur_sig(id,value);
 }
+
+void CAN::setMotorPos_slot(u8 id,int value)
+{
+    emit setMotorPos_sig(id,value);
+}
+
+void CAN::setMotorSpd_slot(u8 id,float value)
+{
+    emit setMotorSpd_slot(id,value);
+}
+
 
 CAN_RcvThread::CAN_RcvThread(QObject *parent )
 {
@@ -285,11 +301,12 @@ void CAN_RcvThread::RcvMegThread(int s)
     qDebug()<<"CAN_RcvThread is begin"<<QThread::currentThread();
     can_frame *rx_msg = new can_frame();
     int byte;
+    int i=0;
     while(!isStop)
     {
-        qDebug()<<"CAN_RcvThread is run";
+//        qDebug()<<"CAN_RcvThread is run";
         byte=read(s,rx_msg,sizeof (can_frame));
-        qDebug()<<byte;
+//        qDebug()<<byte;
         if(byte>0)
         {
             if(rx_msg->can_id > ELMO_FBCK_ID_BASE && rx_msg->can_id <= ELMO_FBCK_ID_BASE + ELMO_NUM) // coarsening motor message
@@ -298,13 +315,28 @@ void CAN_RcvThread::RcvMegThread(int s)
                 {
                     float value = 0;
                     Char2Float(&value, &rx_msg->data[4]);
-                    emit setMotorCurrent_sig(rx_msg->can_id,value);
-                    qDebug() << "elmo_id = " << rx_msg->can_id << ", current = " << value << endl;
+                    emit setMotorCur_sig((u8)(rx_msg->can_id-ELMO_FBCK_ID_BASE),value);
+//                    qDebug() << "elmo_id = " << rx_msg->can_id << ", current = " << value << endl;
                 }
-                else if('P' == rx_msg->data[0] && 'X' == rx_msg->data[1]){ // query px
+                else if('V' == rx_msg->data[0] && 'X' == rx_msg->data[1]) // query px
+                {
+                    float value = 0;
+                    Char2Float(&value, &rx_msg->data[4]);
+                    emit setMotorSpd_sig((u8)(rx_msg->can_id-ELMO_FBCK_ID_BASE),value);
+
+                }
+                else if('P' == rx_msg->data[0] && 'X' == rx_msg->data[1]) // query px
+                {
                     int value = 0;
                     Char2Int(&value, &rx_msg->data[4])
-                    qDebug() << rx_msg->can_id << ", PX = " << value << endl;
+                    emit setMotorPos_sig((u8)(rx_msg->can_id-ELMO_FBCK_ID_BASE),value);
+//                    qDebug() << rx_msg->can_id << ", PX = " << value <<endl ;
+                }
+                else if('E' == rx_msg->data[0] && 'C' == rx_msg->data[1])
+                {
+                    int value = 0;
+                    Char2Int(&value, &rx_msg->data[4])
+                    qDebug() <<QString("Leg[%1] error code %2").arg(rx_msg->can_id-ELMO_FBCK_ID_BASE).arg(value);
                 }
             }
         }

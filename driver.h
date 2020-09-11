@@ -11,8 +11,6 @@ class Driver:public QObject
 public:
     Driver(u8 id);
     void InitElmo();
-
-
     void ExeCMD(char const* cmd);
     void ExeCMD(char const* cmd, int value, short index = 0);
     void ExeCMD(char const* cmd, float value, short index = 0);
@@ -20,7 +18,7 @@ public:
 private:
     int mCANId;
 signals:
-    void sendCANMsg(can_frame Tx_Msg);
+    void sendCANMsg_sig(can_frame Tx_Msg);
 };
 
 #endif // DRIVER_H

@@ -5,61 +5,107 @@ Motor::Motor(u8 id ,u8 mode)
     motor_id = id;
     motor_mode = mode;
     mDriver=new Driver(motor_id);
-    connect(mDriver,SIGNAL(sendCANMsg(can_frame)),this,SLOT(sendSignal(can_frame)));
-
+    connect(mDriver,&Driver::sendCANMsg_sig,this,&Motor::sendSignal_slot);
     //connect(mDriver,SIGNAL(sendCANMsg(can_frame)),this,[=](can_frame Tx_meg){emit sendCANMsg(Tx_meg);});
 }
+
 void Motor::initMotor()
 {
     mDriver->InitElmo();
-    EnableMotor(false);
-    SetMode(motor_mode); // coarsening motors use speed mode(2) ; direction control motors use Dual Feedback Position Control(4)
+    SetMode(motor_mode);
+    QThread::msleep(100);
     mDriver->ExeCMD("PX", 0);
-    mDriver->ExeCMD("CL", 4.0f, 1); // CL[1] = 10;
-    mDriver->ExeCMD("PL", 10.0f, 1); // PL[1] = 10;
-    EnableMotor(true);
+    QThread::msleep(100);
+    mDriver->ExeCMD("SP", 4000*Kv_Encoder);
+    QThread::msleep(100);
+    mDriver->ExeCMD("SF", 50);
+//    mDriver->ExeCMD("CL", 4.0f, 1); // CL[1] = 4;
+//    mDriver->ExeCMD("PL", 10.0f, 1); // PL[1] = 10;
 }
-void Motor::EnableMotor(bool bAction)
+
+void Motor::EnableMotor(bool action)
 {
+    bAction=action;
+    //qDebug()<<"bAction:"<<bAction;
     mDriver->ExeCMD("MO", bAction ? 1 : 0);
 }
 
-void Motor::SetMode(u_char mode)
+
+void Motor::SetMode(u8 mode)
 {
+    motor_mode = mode;
     mDriver->ExeCMD("UM", mode);
 }
 
-void Motor::Go(float speed)
+void Motor::RunBySpd(float speed)
 {
-    this->speed=speed;
-    EnableMotor(true);
-    mDriver->ExeCMD("JV", speed);
+    motor_speed=speed;
+    mDriver->ExeCMD("JV", speed*Kv_Encoder);
     mDriver->ExeCMD("BG");
 }
 
-void Motor::RunByPos(int position)
+void Motor::SetZeroPos(int position)
 {
-    EnableMotor(true);
+    motor_position = position;
+    mDriver->ExeCMD("PX", position);
+}
+void Motor::SetRunByPosSpd(float speed)
+{
+    motor_speed=speed;
+    mDriver->ExeCMD("SP", speed*Kv_Encoder);
+    mDriver->ExeCMD("BG");
+}
+
+void Motor::RunByPosA(int position)
+{
     mDriver->ExeCMD("PA", position);
     mDriver->ExeCMD("BG");
 }
 
-void Motor::Stop()
+void Motor::RunByPosR(int position)
+{
+    mDriver->ExeCMD("PR", position);
+    mDriver->ExeCMD("BG");
+}
+
+void Motor::RunByCur(float current)
+{
+
+   mDriver->ExeCMD("TC", current);
+}
+
+
+void Motor::Release()
 {
     EnableMotor(false);
 }
 
-void Motor::StopByST()
+void Motor::Stop()
 {
     mDriver->ExeCMD("ST");
 }
 
-void Motor::QueryCurrent()
+void Motor::QueryCur()
 {
     mDriver->QueryCMD("IQ");
 }
 
-void Motor::sendSignal(can_frame Tx_Msg)
+void Motor::QueryErr()
 {
-    emit sendCANMsg(Tx_Msg);
+    mDriver->QueryCMD("EC");
+}
+
+void Motor::QueryPos()
+{
+    mDriver->QueryCMD("PX");
+}
+
+void Motor::QuerySpd()
+{
+    mDriver->QueryCMD("VX");
+}
+
+void Motor::sendSignal_slot(can_frame Tx_Msg)
+{
+    emit sendCANMsg_sig(Tx_Msg);
 };
