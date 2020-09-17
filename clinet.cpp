@@ -24,6 +24,7 @@ void Clinet::newConnection_slot()
 
 void Clinet::RcvClinet_slot()
 {
+    qDebug()<<"RcvClinet_slot!"<<QThread::currentThread();
     QByteArray array = mTcpSocket->read(sizeof(CMD_frame));
     CMD_frame *cmdInfo = (CMD_frame*)array.data();
     if('A' == cmdInfo->header[0] && 'B' == cmdInfo->header[1]){

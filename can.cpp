@@ -52,6 +52,7 @@ CAN::CAN(const char * CANx)
 
     qRegisterMetaType<can_frame>("can_frame");
     qRegisterMetaType<u8>("u8");
+    qRegisterMetaType<s16>("s16");
     connect(mQThread, &QThread::finished, mRcvThread, &QObject::deleteLater);
     connect(mQThread, &QThread::finished, mQThread, &QThread::deleteLater);
     connect(this, &CAN::startRcvThread, mRcvThread, &CAN_RcvThread::RcvMegThread);
@@ -59,6 +60,8 @@ CAN::CAN(const char * CANx)
     connect(mRcvThread,&CAN_RcvThread::setMotorCur_sig,this,&CAN::setMotorCur_slot);
     connect(mRcvThread,&CAN_RcvThread::setMotorSpd_sig,this,&CAN::setMotorSpd_slot);
     connect(mRcvThread,&CAN_RcvThread::setMotorPos_sig,this,&CAN::setMotorPos_slot);
+    connect(mRcvThread,&CAN_RcvThread::setPVT_sig,this,&CAN::setPVT_slot);
+    connect(mRcvThread,&CAN_RcvThread::sendPVTPrama_sig,this,&CAN::sendPVTPrama_slot);
     mQThread->start();
 
 
@@ -263,6 +266,7 @@ void CAN::Transmit(can_frame pFrame)
     if(nbytes != sizeof(can_frame)){ //如果 nbytes 不等于帧长度，就说明发送失败
         qDebug() << mCAN << " Send Error! ";
     }
+    QThread::usleep(500);
 }
 
 void CAN::startRcv()
@@ -289,7 +293,14 @@ void CAN::setMotorSpd_slot(u8 id,float value)
 {
     emit setMotorSpd_slot(id,value);
 }
-
+void CAN::setPVT_slot(u8 id ,int pos,s16 Hptr,s16 Dptr)
+{
+    emit setPVT_sig(id,pos,Hptr,Dptr);
+}
+void CAN::sendPVTPrama_slot(u8 id,s16 Wptr,s16 Rptr)
+{
+    emit sendPVTPrama_sig(id,Wptr,Rptr);
+}
 
 CAN_RcvThread::CAN_RcvThread(QObject *parent )
 {
@@ -336,7 +347,29 @@ void CAN_RcvThread::RcvMegThread(int s)
                 {
                     int value = 0;
                     Char2Int(&value, &rx_msg->data[4])
-                    qDebug() <<QString("Leg[%1] error code %2").arg(rx_msg->can_id-ELMO_FBCK_ID_BASE).arg(value);
+                    qDebug() <<QString("Leg[%1] error code %2").arg(rx_msg->can_id-ELMO_FBCK_ID_BASE-1).arg(value);
+                }
+            }
+            else if(rx_msg->can_id > 0x380 && rx_msg->can_id <= 0x380 + ELMO_NUM)   //TDO3
+            {
+                int pos  = 0;
+                s16 Hptr = 0;
+                s16 Tptr = 0;
+                Char2Int(&pos, &rx_msg->data[0])
+                Char2s16(&Hptr,&rx_msg->data[4])
+                Char2s16(&Tptr,&rx_msg->data[6])
+                emit setPVT_sig(rx_msg->can_id-0x380,pos,Hptr,Tptr);
+                qDebug() <<QString("Leg[%1] Position: %2 , PVT Hptr : %3 , PVT Tptr : %4").arg(rx_msg->can_id-ELMO_FBCK_ID_BASE-1).arg(pos).arg(Hptr).arg(Tptr);
+            }
+            else if(rx_msg->can_id > 0x80 && rx_msg->can_id <= 0x80 + ELMO_NUM)
+            {
+                if(rx_msg->data[0] == 0x00 && rx_msg->data[1] == 0xff && rx_msg->data[2]==0x81 && rx_msg->data[3]==0x56)
+                {
+                    s16 Wptr = 0;
+                    s16 Rptr = 0;
+                    Char2s16(&Wptr,&rx_msg->data[4])
+                    Char2s16(&Rptr,&rx_msg->data[6])
+                    emit sendPVTPrama_sig((u8)(rx_msg->can_id-0X80),Wptr,Rptr);
                 }
             }
         }

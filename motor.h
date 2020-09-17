@@ -3,6 +3,10 @@
 #include "driver.h"
 #include <QDebug>
 #include <QThread>
+#include <QQueue>
+#include <Utilities.h>
+#include <QMutex>
+#include <QMutexLocker>
 class Motor:public QObject
 {
     Q_OBJECT
@@ -17,8 +21,15 @@ public:
     void RunByPosA(int position);
     void RunByPosR(int position);
     void RunByCur(float current);
+    void SendPVT(int position,int speed,int time);
+    void RunBypPVT(int ReadPoint);
+
+    int Rad2Cnt(float red);
+    float Cnt2Rad(int cnt);
+
     void Release();
     void Stop();
+    void Begin();
     void QueryPos();
     void QuerySpd();
     void QueryCur();
@@ -37,10 +48,36 @@ public:
     float getMotorSpd(){
         return motor_speed;
     }
+    void setWPtr(s16 ptr){
+        QMutexLocker Wptr_Mutexlocker(&Wptr_Mutex);
+        Wptr = ptr;
+    }
+    s16 getWPtr(){
+        QMutexLocker Wptr_Mutexlocker(&Wptr_Mutex);
+        return Wptr;
+    }
+    void setRPtr(s16 ptr){
+        QMutexLocker Wptr_Mutexlocker(&Rptr_Mutex);
+        Rptr = ptr ;
+    }
+    s16 getRPtr(){
+        QMutexLocker Wptr_Mutexlocker(&Rptr_Mutex);
+        return Rptr;
+    }
+
+
 public:
     u16 EncoderCnt =  2048;
-    u16 Kv_Encoder = 2048 * 4 /60;
+    float Kv_Encoder = 2048 * 4.f/60;
+    float Leg_Reduction = 21.357f;
+    QQueue<PVT_Prama> PVTQueue;
+    QMutex PVTPrama_Mutex;
+    QMutex Wptr_Mutex;
+    QMutex Rptr_Mutex;
 private:
+
+    s16 Wptr = 1;
+    s16 Rptr = 1;
     Driver *mDriver;
     float motor_speed;
     float motor_current;

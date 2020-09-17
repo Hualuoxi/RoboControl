@@ -147,6 +147,7 @@ void USART_RcvThread::RcvMegThread(int fd)
     Data_Yesense[1]=0x53;
     while(!isStop)
     {
+//        QThread::msleep(1);
         if(read(fd, &temp, sizeof(u8)))
         {
             if(temp == Data_Yesense[0])					//接收到帧头

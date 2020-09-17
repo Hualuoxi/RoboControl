@@ -15,6 +15,7 @@ HEADERS += \
     gyro.h \
     main.h \
     motor.h \
+    robodriver.h \
     robot.h \
     usart.h
 
@@ -26,5 +27,6 @@ SOURCES += \
     gyro.cpp \
     main.cpp \
     motor.cpp \
+    robodriver.cpp \
     robot.cpp \
     usart.cpp

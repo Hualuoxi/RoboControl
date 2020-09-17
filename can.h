@@ -22,6 +22,8 @@ signals:
     void setMotorCur_sig(u8 id,float value);
     void setMotorSpd_sig(u8 id,float value);
     void setMotorPos_sig(u8 id,int value);
+    void setPVT_sig(u8 id ,int pos,s16 Hptr,s16 Tptr);
+    void sendPVTPrama_sig(u8 id,s16 Wptr,s16 Rptr);
 public slots:
     void RcvMegThread(int s);
     void stopRcvThread();
@@ -105,12 +107,15 @@ signals:
     void setMotorCur_sig(u8 id,float value);
     void setMotorPos_sig(u8 id,int value);
     void setMotorSpd_sig(u8 id,float value);
-
+    void setPVT_sig(u8 id ,int pos,s16 Hptr,s16 Tptr);
+    void sendPVTPrama_sig(u8 id,s16 Wptr,s16 Rptr);
 public slots:
     void Transmit(can_frame pFrame);
     void setMotorCur_slot(u8 id,float value);
     void setMotorPos_slot(u8 id,int value);
     void setMotorSpd_slot(u8 id,float value);
+    void setPVT_slot(u8 id ,int pos,s16 Hptr,s16 Tptr);
+    void sendPVTPrama_slot(u8 id,s16 Wptr,s16 Rptr);
 
 };
 

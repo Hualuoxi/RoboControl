@@ -6,6 +6,7 @@
 #include "usart.h"
 #include <QMutex>
 #include <QMutexLocker>
+#include <QDateTime>
 class Gyro:public QObject
 {
     Q_OBJECT

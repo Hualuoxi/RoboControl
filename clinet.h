@@ -10,8 +10,9 @@ class Clinet :public QObject
 {
     Q_OBJECT
 public:
-    Clinet(QObject *parent = 0, quint16 port=20200);
+    Clinet(QObject *parent,quint16 port=20200);
 private:
+
     QTcpServer *mTcpServer;
     QTcpSocket *mTcpSocket;
 signals:

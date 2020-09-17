@@ -1,0 +1,461 @@
+#include "roobodriver.h"
+
+RooboDriver::RooboDriver(Robot* Robot)
+{
+    mRobot = Robot;
+}
+
+void RooboDriver::run()
+{
+    qDebug()<<"Robot run!"<<QThread::currentThread();
+
+    //SearchZero();
+    Ready(1500,pi*1.55);
+    //Rotate(2500,2);
+
+    GoForward(1000, 10);
+    Ready(1500,-pi*1.55);
+    mRobot->BroadCast->EnableMotor(false);
+}
+
+/**
+ * @brief  从复位状态切换至准备运动状态
+ * @input  T              该动作周期    ms
+ *         PositionWant   目标状态位置  rad
+ */
+void RooboDriver::Ready(float T, float PositionWant)
+{
+    qDebug()<<"Robot Ready";
+
+    QThread::msleep(100);
+    mRobot->BroadCast->EnableMotor(false);
+    QThread::msleep(100);
+    mRobot->BroadCast->SetZeroPos(0);
+    QThread::msleep(100);
+    mRobot->BroadCast->SetMode(POSITON_MODE);
+    QThread::msleep(1000);
+
+    ControlParam parameter;
+    for (int i = 0; i < 6; i++)
+        parameter.T[i] = T;
+    for (int i = 0; i < 6; i++)
+        parameter.PW[i] = PositionWant;
+    SetControlParam(&parameter);
+    IndependentControl();
+}
+
+void RooboDriver::SearchZero()
+{
+    qDebug()<<"Robot SearchZero";
+    mRobot->BroadCast->EnableMotor(false);
+    QThread::msleep(100);
+    mRobot->BroadCast->SetMode(TORQUE_MODE);
+    QThread::msleep(100);
+    mRobot->BroadCast->EnableMotor(true);
+    QThread::msleep(100);
+    mRobot->BroadCast->RunByCur(-0.4f);
+    QThread::msleep(3000);
+    int PosTemp[6]={0};
+    mRobot->BroadCast->QueryPos();
+    QThread::msleep(100);
+    int flag = 0;
+    do
+    {
+        for(int i=0;i<6;i++)
+            PosTemp[i]= mRobot->Leg[i]->getMotorPos();
+        mRobot->BroadCast->QueryPos();
+        QThread::msleep(100);
+        if(abs(PosTemp[0]-mRobot->Leg[0]->getMotorPos())<100&&
+                abs(PosTemp[1]-mRobot->Leg[1]->getMotorPos())<100&&
+                abs(PosTemp[2]-mRobot->Leg[2]->getMotorPos())<100&&
+                abs(PosTemp[3]-mRobot->Leg[3]->getMotorPos())<100&&
+                abs(PosTemp[4]-mRobot->Leg[4]->getMotorPos())<100&&
+                abs(PosTemp[5]-mRobot->Leg[5]->getMotorPos())<100)
+            flag++;
+        else
+            flag=0;
+
+    }while(flag<20);
+    QThread::msleep(100);
+}
+
+/**
+ * @brief  向前走
+ * @input  T              该动作周期    ms
+ *         num            步数
+ */
+void RooboDriver::GoForward(float T, int num)
+{
+    ControlParam parameter;
+
+    for (int i = 0; i < 6; i++)
+        parameter.T[i] = T;
+
+    for (int i = 0; i < 6; i++)
+        parameter.PW[i] = 2 * pi;
+    parameter.StepNum = num;
+    parameter.PD[0] = 0.0;
+    parameter.PD[1] = 0.5;
+    parameter.PD[2] = 0.5;
+    parameter.PD[3] = 0;
+    parameter.PD[4] = 0;
+    parameter.PD[5] = 0.5;
+    parameter.MoveStatus = RUN;
+    SetControlParam(&parameter);
+    IndependentControl();
+}
+
+void RooboDriver::Rotate(float T, int num)
+{
+    ControlParam parameter;
+
+    for (int i = 0; i < 6; i++)
+        parameter.T[i] = T;
+
+
+    parameter.PW[0] = 2 * pi;
+    parameter.PW[1] = -2 * pi;
+    parameter.PW[2] = 2 * pi;
+    parameter.PW[3] = -2 * pi;
+    parameter.PW[4] = 2 * pi;
+    parameter.PW[5] = -2 * pi;
+
+    parameter.StepNum = num;
+
+    parameter.PD[0] = 0.0;
+    parameter.PD[1] = 0.5;
+    parameter.PD[2] = 0.5;
+    parameter.PD[3] = 0;
+    parameter.PD[4] = 0;
+    parameter.PD[5] = 0.5;
+    parameter.MoveStatus = RUN;
+    SetControlParam(&parameter);
+    IndependentControl();
+}
+
+/**
+ * @brief  双足跑
+ */
+void RooboDriver::BipedRun()
+{
+    //前跳实验
+    ControlParam Param;
+    int i = 0;
+    Param.PW[i++] = 0.5f * pi;
+    Param.PW[i++] = 0.5f * pi;
+    Param.PW[i++] = 0.5f * pi;
+    Param.PW[i++] = 0.5f * pi;
+    Param.PW[i++] = 0.5f * pi;
+    Param.PW[i++] = 0.5f * pi;
+    SetControlParam(&Param);
+    IndependentControl();
+
+    for (int i = 0; i < 6; i++)
+        Param.T[i] = 500;
+
+    i = 0;
+    Param.PW[i++] = -1.7f * pi;
+    Param.PW[i++] = -1.7f * pi;
+    Param.PW[i++] = -1.7f * pi;
+    Param.PW[i++] = -1.7f * pi;
+    Param.PW[i++] = -1.6f * pi;
+    Param.PW[i++] = -1.6f * pi;
+
+    i = 0;
+    Param.PD[i++] = 0;
+    Param.PD[i++] = 0;
+    Param.PD[i++] = 0;
+    Param.PD[i++] = 0;
+    Param.PD[i++] = 0.5;
+    Param.PD[i++] = 0.5;
+
+    SetControlParam(&Param);
+    IndependentControl();
+
+    QThread::msleep(450);
+
+    for (int i = 0; i < 6; i++)
+        Param.T[i] = 430;
+    i = 0;
+    Param.PW[i++] = 0;
+    Param.PW[i++] = 0;
+    Param.PW[i++] = 0;
+    Param.PW[i++] = 0;
+    Param.PW[i++] = 2 * pi;
+    Param.PW[i++] = 2 * pi;
+
+    Param.PD[4] = 0;
+    Param.PD[5] = 0.5f;
+    Param.StepNum = 10;
+    //Param.MoveStatus = BIPEDRUN;
+    SetControlParam(&Param);
+    IndependentControl();
+
+    for (int i = 0; i < 6; i++)
+        Param.T[i] = 450;
+    Param.StepNum = 10;
+    SetControlParam(&Param);
+    IndependentControl();
+}
+
+/**
+ * @brief  翻转
+ */
+void RooboDriver::RollingOver()
+{
+    //前跳实验
+    ControlParam Param;
+    int i = 0;
+    Param.PW[i++] = 0.5f * pi;
+    Param.PW[i++] = 0.5f * pi;
+    Param.PW[i++] = 0.5f * pi;
+    Param.PW[i++] = 0.5f * pi;
+    Param.PW[i++] = 0.5f * pi;
+    Param.PW[i++] = 0.5f * pi;
+    SetControlParam(&Param);
+    IndependentControl();
+
+    for (int i = 0; i < 6; i++)
+        Param.T[i] = 500;
+
+    i = 0;
+    Param.PW[i++] = -2.3f * pi;
+    Param.PW[i++] = -2.3f * pi;
+    Param.PW[i++] = -2.3f * pi;
+    Param.PW[i++] = -2.3f * pi;
+    Param.PW[i++] = -2.3f * pi;
+    Param.PW[i++] = -2.3f * pi;
+
+    i = 0;
+    Param.PD[i++] = 0;
+    Param.PD[i++] = 0;
+    Param.PD[i++] = 0;
+    Param.PD[i++] = 0;
+    Param.PD[i++] = 0.5f;
+    Param.PD[i++] = 0.5f;
+
+    SetControlParam(&Param);
+    IndependentControl();
+}
+
+/**
+ * @brief  从复位状态切换至准备运动状态
+ * @input  T              该动作周期    ms
+ *         PositionWant   目标状态位置  rad
+ */
+void RooboDriver::IndependentControl(void)
+{
+    XVAS temp[6];
+    float PositionStart[6];
+    float TargetPosition[6] = { 0 };
+    float CurrentPeriod_P[6] = { 0 };
+    int j;
+    int flag = 0;
+    int step[6] = { 0 };
+    float CurrentPeriod_t[6] = { 0 };
+    float IsTurnPoint = 0;
+//    double am[8] = { 0 };
+//    double angle=0;
+    mRobot->BroadCast->QueryPos();
+    QThread::msleep(100);
+    for (int j = 0; j < 6; j++)
+    { 
+        PositionStart[j] = mRobot->Leg[j]->Cnt2Rad(mRobot->Leg[j]->getMotorPos());
+//        qDebug()<<QString("PositionStart[%1]:%2").arg(j).arg(PositionStart[j]);
+        mRobot->Leg[j]->EnableMotor(true);
+    }
+    QThread::msleep(100);
+    QDateTime begin_time =QDateTime::currentDateTime();
+    QDateTime now_time = begin_time;
+    float t = begin_time.msecsTo(now_time);
+    float t_old = t;
+    //步态循环 全部腿部到达目标位置后终止
+    while (flag!=0x3F)
+    {
+        now_time = QDateTime::currentDateTime();
+        t_old = t;
+        t = begin_time.msecsTo(now_time);
+         //qDebug()<<"t:"<<t;
+//		FeedBack();
+        for (j = 0; j < 6; j++)
+        {
+            if (t < (Param->PD[j]* Param->T[j]))
+            {
+                continue;
+            }
+            else if (t >= (Param->PD[j] * Param->T[j]) && t <= (Param->T[j] * (Param->StepNum + Param->PD[j])))
+            {
+                // 当前运动到的步数
+                step[j] = (int)((t - Param->PD[j] * Param->T[j]) / Param->T[j]);
+                // 当前周期内的时间变量t
+                CurrentPeriod_t[j] = (float)fmod((double)(t - Param->PD[j] * Param->T[j]), (double)(Param->T[j]));
+
+                //中途反转
+                if (Param->TP[j] != 0.0f )
+                {
+                    if (CurrentPeriod_t[j] <= Param->TT[j])
+                    {
+                        TrigonalAcc(Param->TP[j], CurrentPeriod_t[j] / 1000.f, Param->TT[j] / 1000.f, &temp[j]);
+                    }
+                    else if (CurrentPeriod_t[j] > Param->TT[j])
+                    {
+                        TrigonalAcc(Param->TP[j] - Param->PW[j], (CurrentPeriod_t[j] - Param->TT[j]) / 1000.f, (Param->T[j] - Param->TT[j]) / 1000.f, &temp[j]);
+
+                    }
+                    if((int)(fmod((t - Param->PD[j] * Param->T[j]), Param->T[j]) / Param->TT[j]))
+                        IsTurnPoint = 1 ;
+                    CurrentPeriod_P[j] = PositionStart[j] + IsTurnPoint * Param->TP[j] + temp[j].x;
+
+                    TargetPosition[j] = CurrentPeriod_P[j] + step[j] * (2 * Param->TP[j] - Param->PW[j]);
+                }
+                else
+                {
+                    TrigonalAcc(Param->PW[j], CurrentPeriod_t[j] / 1000.f, Param->T[j] / 1000.f, &temp[j]);
+                    CurrentPeriod_P[j] = PositionStart[j] + temp[j].x;
+                    TargetPosition[j] = CurrentPeriod_P[j] + step[j] * Param->PW[j];
+                }
+            }
+            else
+            {
+                flag |= (0x01 << j);
+            }
+        }
+        for (j = 0; j < 6; j++)
+        {
+            if (t > (Param->PD[j] * Param->T[j]) && t < (Param->T[j] * (Param->StepNum + Param->PD[j])))
+            {
+                int count = (int)mRobot->Leg[j]->Rad2Cnt(TargetPosition[j]);
+//                int speed = (int)Leg[j]->Red2Cnt(temp[j].v);
+//                Leg[j]->SendPVT(count,speed,(int)(t-t_old));
+//                if(abs(Leg[j]->getHPtr() - Leg[j]->getTPtr()))
+//                {
+//                    Leg[j]->RunBypPVT(Leg[j]->getTPtr());
+//                }
+                //if(Leg[j]getWritePtr>)
+//                qDebug()<<QString("Leg[%1] count: %2 TargetAngle: %3").arg(j).arg(count).arg(TargetPosition[j]);
+                //Leg[j]->SetRunByPosSpd((float)(temp[j].v/2/pi* Leg_Reduction[j] * Leg[j]->EncoderCnt * 4));
+                mRobot->Leg[j]->RunByPosA(count);
+            }
+        }
+        mRobot->BroadCast->Begin();
+        //QThread::msleep(1);
+        //qDebug() << "IndependentControl t:" << t;
+        //qDebug() << "The yaw angle is  " <<gyro->getValues();
+    }
+    int Target[6]={0};
+    bool wait = true;
+    for (j = 0; j < 6; j++)
+    {
+        Target[j] =(int)mRobot->Leg[j]->Rad2Cnt(PositionStart[j]+Param->StepNum * Param->PW[j]); // (int)((PositionStart[j]+Param->StepNum * Param->PW[j]) * Leg[j]->Leg_Reduction * Leg[j]->EncoderCnt * 4 / (2*pi));
+    }
+    do
+    {
+        for (j = 0; j < 6; j++)
+        {
+            mRobot->Leg[j]->RunByPosA(Target[j]);
+        }
+        mRobot->BroadCast->Begin();
+        QThread::msleep(100);
+        mRobot->BroadCast->QueryPos();
+        QThread::msleep(100);
+        if(abs(Target[0]-mRobot->Leg[0]->getMotorPos())<10&&
+                        abs(Target[1]-mRobot->Leg[1]->getMotorPos())<10&&
+                        abs(Target[2]-mRobot->Leg[2]->getMotorPos())<10&&
+                        abs(Target[3]-mRobot->Leg[3]->getMotorPos())<10&&
+                        abs(Target[4]-mRobot->Leg[4]->getMotorPos())<10&&
+                        abs(Target[5]-mRobot->Leg[5]->getMotorPos())<10)
+                    wait = false;
+    }while(wait);
+}
+
+
+/**
+ * @brief  从复位状态切换至准备运动状态
+ * @input  T              该动作周期    ms
+ *         PositionWant   目标状态位置  rad
+ */
+void RooboDriver::SetControlParam(ControlParam* P)
+{
+    Param = P;
+}
+
+
+/**
+ * @brief  修正梯形加速度规划
+ * @input  最大加速度 当前时间戳 周期
+ * @ouput  加速度a m/s^2  速度v 位移x 冲击度s
+ */
+void RooboDriver::TrapezoidalAcc(float am, float t, float T, XVAS* xvas)
+{
+    XVAS temp;
+        if (t <= (T / 8.f))
+        {
+            xvas->a = am / 2.f * (1.f - cos(8.f * pi * (1.f / T) * t));
+            xvas->s = (4.f * am * pi * sin((8 * pi * t) / T)) / T;
+            xvas->v = (am * t) / 2. - (T * am * sin((8 * pi * t) / T)) / (16 * pi);
+            xvas->x = (am * t * t ) / 4. + (T * T * am * cos((8 * pi * t) / T)) / (128 * pi * pi);
+        }
+        else if (t <= (3. / 8 * T))
+        {
+            TrapezoidalAcc(am, T / 8.f, T, &temp);
+            xvas->a = am;
+            xvas->s = 0;
+            xvas->v = am * t + (temp.v - am * T / 8.);
+            xvas->x = (am * t * t) / 2 + (temp.v - am * T / 8.) * t + (am * T * T) / 128. - (temp.v * T) / 8. + temp.x;
+        }
+        else if (t <= (5. / 8 * T))
+        {
+            TrapezoidalAcc(am, T * 3 / 8.f, T, &temp);
+            xvas->a = am * cos(4 * pi / T * (t - 3 / 8. * T));
+            xvas->s = (4 * am * pi * sin((4 * pi * ((3 * T) / 8 - t)) / T)) / T;
+            xvas->v = -(T * am * sin((4 * pi * ((3 * T) / 8 - t)) / T)) / (4 * pi) + temp.v;
+            xvas->x = -(T * T * am * cos((4 * pi * ((3 * T) / 8 - t)) / T)) / (16 * pi * pi) + temp.v * t + (0.0063 * am * T * T) - (3 * temp.v * T) / 8. + temp.x;
+        }
+        else if (t <= (7. / 8 * T))
+        {
+            TrapezoidalAcc(am, T * 5 / 8.f, T, &temp);
+            xvas->a = -am;
+            xvas->s = 0;
+            xvas->v = -am * t + (temp.v + am * 5 * T / 8.);
+            xvas->x = -(am * t * t) / 2. + (temp.v + am * 5 * T / 8.) * t + temp.x - (5 * T * temp.v) / 8. - (25 * T * T * am) / 128.;
+        }
+
+        else
+        {
+            TrapezoidalAcc(am, T * 7 / 8.f, T, &temp);
+            xvas->a = -am / 2 * (1 + cos(8 * pi / T * (t - 7 / 8. * T)));
+            xvas->s = -(4 * am * pi * sin((8 * pi * ((7 * T) / 8. - t)) / T)) / T;
+            xvas->v = (T * am * sin((8 * pi * ((7 * T) / 8. - t)) / T)) / (16 * pi) - (am * t) / 2 + temp.v + (7 * T * am) / 16.;
+            xvas->x = (T * T * am * cos((8 * pi * ((7 * T) / 8. - t)) / T)) / (128 * pi * pi) - (am * t * t) / 4. + (temp.v + (7 * T * am) / 16.) * t + temp.x - (7 * T * temp.v) / 8. - (0.1922 * T * T * am);
+        }
+}
+
+/**
+ * @brief  三角形加速度规划
+ * @input  最大加速度 当前时间戳 周期
+ * @ouput  加速度a m/s^2  速度v 位移x 冲击度s
+ */
+void RooboDriver::TrigonalAcc(float PositionWant, float t, float T, XVAS* xvas)
+{
+    double am = 8.f* PositionWant / (T * T);
+    if (t <= T / 4)
+    {
+        xvas->a = t * 4 / T * am;
+        xvas->v = (2 * am * t * t) / T;
+        xvas->x = (2 * am * t *t * t) / (3 * T);
+    }
+
+    else if (t <= 3 * T / 4.)
+    {
+        xvas->a = (T / 2 - t) * 4 / T * am;
+        xvas->v = -(am * (T - 2 * t) * (T - 2 * t)) / (2 * T) + am * T / 4;
+        xvas->x = -(am * (T - 2 * t) * (3 * T * T - 2 * (T - 2 * t) * (T - 2 * t))) / (24 * T) + (T * T * am) / 16;
+    }
+
+    else
+    {
+        xvas->a = -(T - t) * 4 / T * am;
+        xvas->v = (2 * am * (T - t) * (T - t)) / T;
+        xvas->x = -(2 * am * (T - t) * (T - t) * (T - t)) / (3 * T) + PositionWant;
+    }
+}

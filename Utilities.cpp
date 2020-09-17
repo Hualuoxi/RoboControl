@@ -1,7 +1,7 @@
 #include "Utilities.h"
 // float to char* , for sent CAN message
 
-const double pi=3.141592654;
+const float pi=3.141592654f;
 
 
 void Float2Char(unsigned char *buff, float *f)

@@ -16,7 +16,7 @@ typedef volatile signed int vint32_t;
 typedef volatile signed char vint8_t;
 
 /********************   PI   *************************/
-extern const double pi;
+extern const float pi;
 /*****************  Elmo_CAN_ID  *********************/
 #define ELMO_CTRL_ID_BASE   0x300
 #define ELMO_FBCK_ID_BASE   0x280
@@ -43,14 +43,19 @@ extern const double pi;
 #define ELMO_TURN_2_RX      (ELMO_FBCK_ID_BASE+ELMO_TURN_2)
 
 
-const float Leg_Reduction[6]= {21.0f,21.0f,19.2f,21.0f,21.0f,21.0f};
 
-
+#define PVTPnt 8
 
 // convert 4 bytes to signed int
-#define Int2Char(charBuff, intValue)		{ *(signed int*)buff = *intValue; }
+#define Int2Char(charBuff, intValue)		{ *(char *)charBuff = *(char *)intValue; }
 // signed int to 4 bytes
 #define Char2Int(intValue, charBuff)		{ *(signed int *)intValue = *(signed int *)charBuff; }
+
+// convert 4 bytes to signed int
+#define s162Char(charBuff, s16Value)		{ *(char *)charBuff = *(char *)s16Value; }
+// signed int to 4 bytes
+#define Char2s16(intValue, charBuff)		{ *(s16 *)intValue = *(s16 *)charBuff; }
+
 typedef struct
 {
     float pitch;			/*uinit: ° (deg)*/
@@ -63,10 +68,10 @@ typedef struct
  */
 struct XVAS
 {
-    double x;
-    double v;
-    double a;
-    double s;
+    float x;
+    float v;
+    float a;
+    float s;
 };
 
 typedef struct
@@ -137,6 +142,42 @@ struct _ROBOT_DATA_FRAME
 };
 typedef _ROBOT_DATA_FRAME RobotFadebck_frame;
 
+struct IndependentControlParam
+{
+    // 目标位置 转折点之后反转
+    float PW[6] = { 0 };
+    // 相位差
+    float PD[6] = { 0 };
+    // 运动周期
+    float T[6] = { 1000,1000,1000,1000,1000,1000 };
+    // 转向点
+    float TP[6] = {0};
+    // 转向时间
+    float TT[6] = { 0 };
+    // 步态循环次数
+    int StepNum = 1;
+    // 步态循环次数
+    char MoveStatus = 0;
+};
+typedef IndependentControlParam ControlParam;
+
+
+struct PVTPlanningParam
+{
+    // 目标位置 转折点之后反转
+    float PosWant[6] = { 0 };
+    // 相位差
+    float PhaseDiff[6] = { 0 };
+    // 运动周期
+    float T[6] = { 2000,2000,2000,2000,2000,2000 };
+    // 步态循环次数
+    int StepNum = 1;
+    float a=3;
+    int StepAcc=0;
+    int StepDcc=0;
+};
+typedef PVTPlanningParam PVTPP;
+
 struct _CMD_FRAME
 {
    unsigned char header[2];
@@ -150,6 +191,16 @@ struct _CMD_FRAME
 typedef _CMD_FRAME CMD_frame;
 
 #pragma pack()
+
+
+struct PVT_Prama
+{
+   double pos;
+   double vel;
+   double tim;
+};
+
+
 void Char2Float(float* f, unsigned char* buff);
 void Float2Char(unsigned char *buff, float *f);
 #endif // UTILITIES_H

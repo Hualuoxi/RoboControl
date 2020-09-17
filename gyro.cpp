@@ -226,9 +226,11 @@ RobotAngle Gyro::getAngleNow()
 
 void Gyro::setAngleNow_slot(QVector<u8>a)
 {
-    //qDebug()<<"setAngleNow_slot";
+//    qDebug()<<"setAngleNow_slot"<<QThread::currentThread();
 //    for(int i=0;i<a.length();i++)
 //        qDebug()<<hex<<a[i]<<endl;
+    QDateTime begin_time =QDateTime::currentDateTime();
+    QDateTime now_time = begin_time;
     res = analysis_data(&a[0], a.length());
     if(res == 0 || res == 1)
     {
@@ -236,6 +238,7 @@ void Gyro::setAngleNow_slot(QVector<u8>a)
         AngleNow.yaw = g_output_info.yaw-AngleRef.yaw;
         AngleNow.roll = g_output_info.roll-AngleRef.roll;
         AngleNow.pitch = g_output_info.pitch-AngleRef.pitch;
+//        qDebug()<<QString("yaw = %1 ,roll = %2 ,pitch = %3,AngleRef.yaw = %4").arg(AngleNow.yaw).arg(AngleNow.roll).arg(AngleNow.pitch).arg(AngleRef.yaw);
         if(SvRefAng)
         {
             AngleRef=AngleNow;
@@ -243,6 +246,8 @@ void Gyro::setAngleNow_slot(QVector<u8>a)
         }
 //        qDebug()<<"Yaw: "<<AngleNow.yaw<<"roll: "<<AngleNow.roll<<"pitch: "<<AngleNow.pitch;
     }
+    now_time =QDateTime::currentDateTime();
+    qDebug()<<"the time is : "<<begin_time.msecsTo(now_time);
 //    else
 //    {
 //        qDebug()<<res<<"analysis_data error";

@@ -1,0 +1,33 @@
+#ifndef ROOBODRIVER_H
+#define ROOBODRIVER_H
+#include <robot.h>
+class RooboDriver : public QObject
+{
+    Q_OBJECT
+public:
+    RooboDriver(Robot* Robot);
+    void Ready(float T, float PositionWant);
+    void GoForward(float T, int num);
+    void GoBack(float T, int num);
+    void Rotate(float T, int num);
+    void TurnRight(float T, int num);
+    void RollingOver();
+    void BipedRun();
+    void Jump();
+    void run();
+    void SearchZero();
+private:
+    ControlParam *Param = nullptr;
+    Robot* mRobot;
+signals:
+    void sendCANMsg_sig(can_frame Tx_Msg);
+    void TranClinet_sig(RobotFadebck_frame* frame);
+private:
+    void IndependentControl(void);
+    void SetControlParam(ControlParam* P);
+    void TrapezoidalAcc(float am, float t, float T, XVAS* xvas);
+    void TrigonalAcc(float PositionWant, float t, float T, XVAS* xvas);
+    
+};
+
+#endif // ROOBODRIVER_H
