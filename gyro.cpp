@@ -229,9 +229,8 @@ void Gyro::setAngleNow_slot(QVector<u8>a)
 //    qDebug()<<"setAngleNow_slot"<<QThread::currentThread();
 //    for(int i=0;i<a.length();i++)
 //        qDebug()<<hex<<a[i]<<endl;
-    QDateTime begin_time =QDateTime::currentDateTime();
-    QDateTime now_time = begin_time;
     res = analysis_data(&a[0], a.length());
+//    qDebug()<<"the time1 is : "<<begin_time.msecsTo(QDateTime::currentDateTime());
     if(res == 0 || res == 1)
     {
         QMutexLocker AngleNow_MutexLocker(&AngleNow_Mutex);
@@ -246,8 +245,6 @@ void Gyro::setAngleNow_slot(QVector<u8>a)
         }
 //        qDebug()<<"Yaw: "<<AngleNow.yaw<<"roll: "<<AngleNow.roll<<"pitch: "<<AngleNow.pitch;
     }
-    now_time =QDateTime::currentDateTime();
-    qDebug()<<"the time is : "<<begin_time.msecsTo(now_time);
 //    else
 //    {
 //        qDebug()<<res<<"analysis_data error";

@@ -363,13 +363,30 @@ void CAN_RcvThread::RcvMegThread(int s)
             }
             else if(rx_msg->can_id > 0x80 && rx_msg->can_id <= 0x80 + ELMO_NUM)
             {
-                if(rx_msg->data[0] == 0x00 && rx_msg->data[1] == 0xff && rx_msg->data[2]==0x81 && rx_msg->data[3]==0x56)
+                if(rx_msg->data[0] == 0x00 && rx_msg->data[1] == 0xff && rx_msg->data[2]==0x81)
                 {
-                    s16 Wptr = 0;
-                    s16 Rptr = 0;
-                    Char2s16(&Wptr,&rx_msg->data[4])
-                    Char2s16(&Rptr,&rx_msg->data[6])
-                    emit sendPVTPrama_sig((u8)(rx_msg->can_id-0X80),Wptr,Rptr);
+                    if(rx_msg->data[3]==0x56)
+                    {
+                        s16 Wptr = 0;
+                        s16 Rptr = 0;
+                        Char2s16(&Wptr,&rx_msg->data[4])
+                        Char2s16(&Rptr,&rx_msg->data[6])
+                        emit sendPVTPrama_sig((u8)(rx_msg->can_id-0X80),Wptr,Rptr);
+                    }
+                    if(rx_msg->data[3]==0x08)
+                    {
+                        if(rx_msg->data[6]==0x03)
+                        {
+                            s16 Wptr = 0;
+                            s16 Rptr = 0;
+                            Char2s16(&Wptr,&rx_msg->data[4])
+                            Rptr=Wptr;
+                            emit sendPVTPrama_sig((u8)(rx_msg->can_id-0X80),Wptr,Rptr);
+
+                        }
+
+                    }
+
                 }
             }
         }

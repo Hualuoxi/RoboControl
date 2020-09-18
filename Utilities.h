@@ -165,16 +165,23 @@ typedef IndependentControlParam ControlParam;
 struct PVTPlanningParam
 {
     // 目标位置 转折点之后反转
-    float PosWant[6] = { 0 };
+    float PosWant[6] = {2*pi,2*pi,2*pi,2*pi,2*pi,2*pi};
     // 相位差
-    float PhaseDiff[6] = { 0 };
+    float PhaseDiff[6] = {0.0,0.0,0.0,0.0,0.0,0.0 };
     // 运动周期
     float T[6] = { 2000,2000,2000,2000,2000,2000 };
+    float Tb[6] = { 2000,2000,2000,2000,2000,2000 };
+    float Te[6] = { 2000,2000,2000,2000,2000,2000 };
     // 步态循环次数
-    int StepNum = 1;
-    float a=3;
-    int StepAcc=0;
-    int StepDcc=0;
+    int StepNum[6] = {1,1,1,1,1,1};
+
+    bool Bg[6]={true,true,true,true,true,true};
+    bool StartRun[6]={true,true,true,true,true,true};
+    bool ContinueRun[6]={false,false,false,false,false,false};
+
+    int StepAcc[6]={0,0,0,0,0,0};
+    int StepDcc[6]={0,0,0,0,0,0};
+    bool KeepPD[6]={false,true,true,false,false,true};
 };
 typedef PVTPlanningParam PVTPP;
 

@@ -4,6 +4,10 @@ Robot::Robot(QObject * parent)
 {
     InitRobot();
     ConnetSlots();
+    mTimer = new QTimer();
+    mTimer->setInterval(50);
+    connect(mTimer,&QTimer::timeout,this,&Robot::setAngle_slot);
+    //mTimer->start();
 
 }
 
@@ -45,6 +49,7 @@ void Robot::InitRobot()
     connect(mClinetQThread,&QThread::finished,mClinetQThread,&QThread::deleteLater);
     connect(mClinetQThread,&QThread::finished,mClient,&QObject::deleteLater);
     mClinetQThread->start();
+
 
 
 
@@ -124,11 +129,11 @@ void Robot::sendPVTPrama_slot(u8 id,s16 Wptr,s16 Rptr)
 void Robot::setAngle_slot()
 {
     AngleNow=mGyro->getAngleNow();
-//  qDebug()<<"Yaw: "<<AngleNow.yaw<<" Roll:"<<AngleNow.roll<<" Pitch:"<<AngleNow.pitch;
+  qDebug()<<"Yaw: "<<AngleNow.yaw<<" Roll:"<<AngleNow.roll<<" Pitch:"<<AngleNow.pitch;
 }
 
 
-/**
+/**l
  * @brief set Motor Current
  * @param Motor id
  * @param Current
