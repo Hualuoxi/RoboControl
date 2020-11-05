@@ -18,11 +18,11 @@ void RoboDriver::run()
 //    PVTTest();
 //    SearchZero();
     //PVTRunTest();
-//    PVTReady(pi*1.6,2000);
+    //PVTReady(pi*1.6,2000);
 //    PVTRotate(2000,5);
-//    PVTRun(2000,2000,0,50);
+    PVTRun(2000,2000,0,10);
     //Rotate(2500,2);
-    //GoForward(1000, 3);
+//    GoForward(2000, 10);
     //PVTReady(-pi*1.6,2000);
     QThread::msleep(5000);
     BroadCast->EnableMotor(false);
@@ -175,23 +175,24 @@ void RoboDriver::SearchZero()
             PosTemp[i]= Leg[i]->getMotorPos();
         BroadCast->QueryPos();
         QThread::msleep(100);
-        if(abs(PosTemp[0]-Leg[0]->getMotorPos())<100&&
-                abs(PosTemp[1]-Leg[1]->getMotorPos())<100&&
-                abs(PosTemp[2]-Leg[2]->getMotorPos())<100&&
-                abs(PosTemp[3]-Leg[3]->getMotorPos())<100&&
-                abs(PosTemp[4]-Leg[4]->getMotorPos())<100&&
-                abs(PosTemp[5]-Leg[5]->getMotorPos())<100)
+        if(abs(PosTemp[0]-Leg[0]->getMotorPos())<50&&
+                abs(PosTemp[1]-Leg[1]->getMotorPos())<50&&
+                abs(PosTemp[2]-Leg[2]->getMotorPos())<50&&
+                abs(PosTemp[3]-Leg[3]->getMotorPos())<50&&
+                abs(PosTemp[4]-Leg[4]->getMotorPos())<50&&
+                abs(PosTemp[5]-Leg[5]->getMotorPos())<50)
             flag++;
         else
             flag=0;
 
     }while(flag<20);
-    QThread::msleep(100);
+    QThread::msleep(10);
     BroadCast->EnableMotor(false);
-    QThread::msleep(100);
+    QThread::msleep(10);
     BroadCast->SetZeroPos(0);
-    QThread::msleep(100);
+    QThread::msleep(10);
     BroadCast->SetMode(POSITON_MODE);
+    QThread::msleep(10);
     BroadCast->EnableMotor(true);
 
 }
@@ -704,6 +705,8 @@ void RoboDriver::getRefPos(float Pos[])
     QThread::msleep(100);
     for (int j = 0; j < 6; j++)
     {
+        Leg[j]->QueryPos();
+        QThread::msleep(10);
         Pos[j] = Leg[j]->getMotorPos();
         QThread::msleep(10);
         Leg[j]->EnableMotor(true);
@@ -711,6 +714,8 @@ void RoboDriver::getRefPos(float Pos[])
     QThread::msleep(100);
 }
 
+
+#if 0
 void RoboDriver::PVTRun(float Tb,float Te, int Anum,int num)
 {
     float PositionStart[6];
@@ -817,9 +822,118 @@ void RoboDriver::PVTRun(float Tb,float Te, int Anum,int num)
 
     }
 }
+#endif
+
+void RoboDriver::DynamicsRun(float Tb,float Te,float Tsb,float Tse,int AccStep)
+{
+//    float PositionStart[6];
+//    getRefPos(PositionStart);
+//    float step = 0;
+//    float T = 0;
+//    float T_cal = 0;
+//    float T_sum = 0;
+//    QDateTime begin_time =QDateTime::currentDateTime();
+//    QDateTime now_time = begin_time;
+//    int t = (int)begin_time.msecsTo(now_time);
+//    while(1)
+//    {
+//        now_time =QDateTime::currentDateTime();
+//        t = (int)begin_time.msecsTo(now_time); 
+//        for (int j = 0; j < 6; j++)
+//        {
+            
+//            if(step<AccStep)
+//                T = Tb - (Tb - Te) / AccStep * step;
+//            else
+//                T = Te;
+            
+//            T_cal = T_sum - T* 0.5f;
+            
+//            if((t >=T_cal) && (Leg[j]->getPVTflag()))
+//            {
+                
+//                PVTTrigonalAcc(PVTPrama->PosWant[j],PVTPrama->T[j],j,mPVT);
+//                for(int i=0;i<PVTPnt;i++)
+//                {
+//                    mPVT_temp = mPVT[i];
+//                    mPVT_temp.pos= mPVT[i].pos + step[j] * PVTPrama->PosWant[j] * Leg[j]->EncoderCnt*4*Leg[j]->Leg_Reduction /2./pi + PositionStart[j];
+//                    mPVT_temp.vel*=1000;
+//                    Leg[j]->PVTPrama_Mutex.lock();
+//                    Leg[j]->PVTQueue.enqueue(mPVT_temp);
+//                    Leg[j]->PVTPrama_Mutex.unlock();
+//                }
+////                qDebug()<<QString("Leg[%1] enqueue time : %2").arg(j).arg(t);
+//                step[j]++;
+//                T_sum += T;
+//            }
+//            if(preSend[j])
+//            {
+//                for(int i = 0;i<PVTPnt/2;i++)
+//                {
+//                    Leg[j]->PVTPrama_Mutex.lock();
+//                    if(!Leg[j]->PVTQueue.empty())
+//                    {
+//                        mPVT_temp = Leg[j]->PVTQueue.dequeue();
+//                        Leg[j]->SendPVT((int)(mPVT_temp.pos),(int)(mPVT_temp.vel),(u8)mPVT_temp.tim);
+//                    }
+//                    Leg[j]->PVTPrama_Mutex.unlock();
+//                }
+//                Leg[j]->RunBypPVT(Leg[j]->getRPtr());
+//                preSend[j] = false;
+//            }
+//        }
+
+//        for (int j = 0; j < 6; j++)
+//        {
+//            // 启动
+//            if(PVTPrama->Bg[j] && (t > PVTPrama->T[j]*PVTPrama->PhaseDiff[j]))
+//            {
+
+//                Leg[j]->Begin();
+//                PVTPrama->Bg[j] = false;
+//            }
+//            // 终止
+//            if(PVTPrama->StepAcc[j])
+//            {
+//                if(t > ((PVTPrama->Tb[j]*PVTPrama->StepAcc[j]-(PVTPrama->StepAcc[j]-1)/2.*(PVTPrama->Tb[j]-PVTPrama->Te[j])+(PVTPrama->StepNum[j]-PVTPrama->StepAcc[j])*PVTPrama->Te[j])+PVTPrama->T[j]*PVTPrama->PhaseDiff[j]))
+//                    StopFlag |= (0x01<<j);
+//            }
+//            else
+//            {
+//                if(t > (PVTPrama->T[j]*(PVTPrama->StepNum[j]+PVTPrama->PhaseDiff[j])))
+//                    StopFlag |= (0x01<<j);
+//            }
+//            // 持续运动
+//            if(PVTPrama->ContinueRun[j])
+//                if(step[j] < PVTPrama->StepNum[j])
+//                    StopFlag |= (0x01<<j);
+
+//        }
+//        if(getStopRun())
+//        {
+//            for(int i =0; i<6 ;i++)
+//            {
+//                Leg[i]->ResetPVT();
+//            }
+//            return;
+
+//        }
+        
+//    }
+    
+
+}
+
 
 void RoboDriver::setPVTPrama(PVTPP *prama)
 {
+    for(int i = 0; i<6; i++)
+    {
+        if(prama->T[i]>1500)
+            prama->T[i] = 1500;
+        if(prama->T[i]<300)
+            prama->T[i] = 300;
+    }
     PVTPrama = prama;
 }
 void RoboDriver::PVTControl(void)
@@ -830,6 +944,7 @@ void RoboDriver::PVTControl(void)
     bool preSend[6] = {true,true,true,true,true,true};
     float step[6]={0};
     float T_cal=0;
+    float T_sum[6] = {0};
     getRefPos(PositionStart);
     u8 StopFlag =0;
     QDateTime begin_time =QDateTime::currentDateTime();
@@ -846,20 +961,33 @@ void RoboDriver::PVTControl(void)
             if(PVTPrama->StepAcc[j])
             {
                 if(step[j]<PVTPrama->StepAcc[j])
+                {
                     PVTPrama->T[j] = PVTPrama->Tb[j] - (PVTPrama->Tb[j] - PVTPrama->Te[j]) / PVTPrama->StepAcc[j] * step[j];
-                else
-                    PVTPrama->T[j]=PVTPrama->Te[j];
-                if(PVTPrama->KeepPD[j])
-                    PVTPrama->T[j] = PVTPrama->T[j] - (PVTPrama->Tb[j] - PVTPrama->Te[j])/PVTPrama->StepAcc[j]/2.;
-                //判断是否开始计算下一周期所用中间变量
-                T_cal = (PVTPrama->Tb[j]*step[j]+(step[j]-1)*step[j]/2.*(PVTPrama->Tb[j] - PVTPrama->Te[j])/PVTPrama->StepAcc[j]) - 0.5f*PVTPrama->T[j];
-            }
-            else
-                T_cal = PVTPrama->T[j]*(step[j]-0.5f);
+                    PVTPrama->Ts[j]= PVTPrama->Tsb[j] - (PVTPrama->Tsb[j] - PVTPrama->Tse[j]) / PVTPrama->StepAcc[j] * step[j];
+                    if(PVTPrama->KeepPD[j])
+                        PVTPrama->T[j] = PVTPrama->T[j] - (PVTPrama->Tb[j] - PVTPrama->Te[j])/PVTPrama->StepAcc[j]/2.;
+                    //判断是否开始计算下一周期所用中间变量
+                    //T_cal = (PVTPrama->Tb[j]*step[j]-(step[j]-1)*step[j]/2.*(PVTPrama->Tb[j] - PVTPrama->Te[j])/PVTPrama->StepAcc[j]) - 1.0f*PVTPrama->T[j];
 
-            if((step[j] < PVTPrama->StepNum[j]) && (t >=T_cal))
+                }
+                else
+                {
+                    PVTPrama->T[j]=PVTPrama->Te[j];
+                    PVTPrama->Ts[j]=PVTPrama->Tse[j];
+                    //判断是否开始计算下一周期所用中间变量
+                    //T_cal = (PVTPrama->Tb[j]*step[j]-(step[j]-1)*step[j]/2.*(PVTPrama->Tb[j] - PVTPrama->Te[j])/PVTPrama->StepAcc[j]) - 0.5f*PVTPrama->T[j];
+                    //T_cal = (PVTPrama->Tb[j]+PVTPrama->Te[j])*PVTPrama->StepAcc[j]*1.0f+(step[j]-PVTPrama->StepAcc[j])*PVTPrama->Te[j];
+                }
+
+            }
+
+            T_cal = T_sum[j] - PVTPrama->T[j] * 1.0f;
+            if((step[j] < PVTPrama->StepNum[j]) && (t >=T_cal) && (Leg[j]->getPVTflag()))
             {
-                PVTTrigonalAcc(PVTPrama->PosWant[j],PVTPrama->T[j],j,mPVT);
+                if(PVTPrama->MoveStatus == READY)
+                    PVTTrigonalAcc(PVTPrama->PosWant[j],PVTPrama->T[j],j,mPVT);
+                else
+                    DynamicsRunAcc(PVTPrama->PosWant[j],PVTPrama->Ts[j]*PVTPrama->T[j],PVTPrama->T[j],j,mPVT);
                 for(int i=0;i<PVTPnt;i++)
                 {
                     mPVT_temp = mPVT[i];
@@ -869,7 +997,9 @@ void RoboDriver::PVTControl(void)
                     Leg[j]->PVTQueue.enqueue(mPVT_temp);
                     Leg[j]->PVTPrama_Mutex.unlock();
                 }
+//                qDebug()<<QString("Leg[%1] enqueue time : %2").arg(j).arg(t);
                 step[j]++;
+                T_sum[j]+=PVTPrama->T[j];
             }
             if(preSend[j])
             {
@@ -914,8 +1044,126 @@ void RoboDriver::PVTControl(void)
                     StopFlag |= (0x01<<j);
 
         }
+        if(getStopRun())
+        {
+            for(int i =0; i<6 ;i++)
+            {
+                Leg[i]->ResetPVT();
+            }
+            return;
+
+        }
     }
 }
+
+void RoboDriver::PVTRun(float Tb,float Te, int Anum,int num)
+{
+    PVTPP prama;
+    for (int i = 0; i < 6; i++)
+    {
+        prama.Tb[i] = Tb;
+        prama.Te[i] = Te;
+        prama.StepNum[i] = num;
+        prama.StepAcc[i] = Anum;
+        prama.Tsb[i] = 0.35;
+        prama.Tse[i] = 0.2;
+    }
+    int i=0;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.MoveStatus = RUN;
+    setPVTPrama(&prama);
+    PVTControl();
+
+}
+
+void RoboDriver::PVTWalkForward(float T, int num)
+{
+    PVTPP prama;
+    for (int i = 0; i < 6; i++)
+    {
+        prama.T[i] = T;
+        prama.StepNum[i] = num;
+        prama.Ts[i] = getSuspension_count();
+    }
+    int i=0;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.MoveStatus = WALK;
+    setPVTPrama(&prama);
+    PVTControl();
+}
+
+void RoboDriver::PVTWalkBack(float T, int num)
+{
+    PVTPP prama;
+    for (int i = 0; i < 6; i++)
+    {
+        prama.T[i] = T;
+        prama.StepNum[i] = num;
+        prama.PosWant[i] = -2*pi;
+    }
+    int i=0;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.MoveStatus = WALK;
+    setPVTPrama(&prama);
+    PVTControl();
+}
+
+void RoboDriver::PVTTurnLeft(float T, int num)
+{
+    PVTPP prama;
+    for (int i = 0; i < 6; i++)
+        prama.T[i] = T;
+    for (int i = 0; i < 6; i++)
+        prama.StepNum[i] = num;
+    for (int i = 0; i < 6; i++)
+        prama.PosWant[i] = 2*pi;
+    int i=0;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.4;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.PhaseDiff[i++] = 0.1;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.4;
+    prama.MoveStatus = TURNLEFT;
+    setPVTPrama(&prama);
+    PVTControl();
+}
+void RoboDriver::PVTTurnRight(float T, int num)
+{
+    PVTPP prama;
+    for (int i = 0; i < 6; i++)
+        prama.T[i] = T;
+    for (int i = 0; i < 6; i++)
+        prama.StepNum[i] = num;
+    for (int i = 0; i < 6; i++)
+        prama.PosWant[i] = 2*pi;
+    int i=0;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.PhaseDiff[i++] = 0.6;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.0;
+    prama.PhaseDiff[i++] = 0.5;
+    prama.MoveStatus = TURNRIGHT;
+    setPVTPrama(&prama);
+    PVTControl();
+}
+
 void RoboDriver::PVTReady(float PosWant,float T)
 {
     PVTPP prama;
@@ -923,9 +1171,10 @@ void RoboDriver::PVTReady(float PosWant,float T)
        prama.T[i] = T;
     for(int i = 0;i<6;i++)
        prama.PosWant[i] = PosWant;
+    prama.MoveStatus = READY;
     setPVTPrama(&prama);
-    PVTControl();
 
+    PVTControl();
 }
 void RoboDriver::PVTRotate(float T, int num)
 {
@@ -950,7 +1199,7 @@ void RoboDriver::PVTRotate(float T, int num)
     prama.PhaseDiff[i++] = 0.0;
     prama.PhaseDiff[i++] = 0.0;
     prama.PhaseDiff[i++] = 0.5;
-
+    prama.MoveStatus = ROTATION;
     setPVTPrama(&prama);
     PVTControl();
 }
@@ -1046,7 +1295,7 @@ void RoboDriver::PVTReady(float PosWant,float T)
 
 
 
-/**l
+/**
  * @brief  PVT三角形加速度规划
  * @input  PosWant T index
  * @ouput  PVT_Prama
@@ -1068,8 +1317,11 @@ void RoboDriver::PVTReady(float PosWant,float T)
  */
 void RoboDriver::PVTTrigonalAcc(float PosWant,float T,u8 index,PVT_Prama *mPVT)
 {
-    float a  = 32*PosWant/3./T/T;
-    float v0 = PosWant/3./T;
+
+    float a  = 32*PosWant/3./T/T; // pi/6
+    float v0 = PosWant/3./T;      // pi/6
+//    float a  = 12*PosWant/T/T; // pi/8
+//    float v0 = PosWant/4./T;      // pi/8
     float cnt_a=a*Leg[index]->EncoderCnt*4*Leg[index]->Leg_Reduction/2./pi;
     float cnt_v0=v0*Leg[index]->EncoderCnt*4*Leg[index]->Leg_Reduction/2./pi;
     for(int i=0;i<PVTPnt;i++)
@@ -1095,5 +1347,101 @@ void RoboDriver::PVTTrigonalAcc(float PosWant,float T,u8 index,PVT_Prama *mPVT)
             mPVT[i].vel = cnt_v0;
             mPVT[i].pos = 11./12. * PosWant * Leg[index]->EncoderCnt*4*Leg[index]->Leg_Reduction/2./pi + cnt_v0 * mPVT[i].tim * (i-(PVTPnt/4.f*3)+1);
         }
+//        if(!index)
+//            qDebug()<<QString("mPVT[%1].pos = %2 , mPVT[%1].vel = %3 , mPVT[%1].tim=%4").arg(i).arg(mPVT[i].pos).arg(mPVT[i].vel).arg(mPVT[i].tim);
     }
+}
+
+/**
+ * @brief  PVT三角形加速度规划
+ * @input  PosWant T index
+ * @ouput  PVT_Prama
+ *
+ *      ^
+ *      |
+ *      |
+ *      |
+ *      |
+ *      |
+ *      |
+ *      |
+ *      |
+ *      |
+ *      |
+ *      |
+ *      ------------------------------------>
+ *
+ */
+void RoboDriver::DynamicsRunAcc(float PosWant,float Ts,float T,u8 index,PVT_Prama *mPVT)
+{
+
+    float contact_phase = PosWant/6.f;
+    float v_low =  contact_phase/Ts;
+    float v_high = 2*(PosWant-contact_phase)/(T-Ts)-v_low;
+    float a  = (v_high-v_low)/((T-Ts)/2);
+    float K_cnt = Leg[index]->EncoderCnt*4*Leg[index]->Leg_Reduction/2./pi;
+//    qDebug()<<QString("v_high = %1 ").arg(v_high);
+    float cnt_a  = a * K_cnt;
+    float cnt_v_low = v_low * K_cnt;
+    float cnt_v_high = v_high * K_cnt;
+    for(int i=0;i<PVTPnt;i++)
+    {
+        if(i<(PVTPnt/4.))
+        {
+            mPVT[i].tim = Ts/4;
+            mPVT[i].vel = cnt_v_low;
+            mPVT[i].pos = mPVT[i].vel * mPVT[i].tim * (i+1);
+        }
+        else if(i<(PVTPnt/4.*2))
+        {
+            mPVT[i].tim = (T-Ts) / 4.0f;
+            mPVT[i].vel = cnt_v_low + cnt_a *(i-(PVTPnt/4.)+1)*mPVT[i].tim;
+            mPVT[i].pos = contact_phase/2.*K_cnt + cnt_v_low*(i-1)*mPVT[i].tim + 0.5* cnt_a*((i-(PVTPnt/4.)+1)*mPVT[i].tim)*((i-(PVTPnt/4.)+1)*mPVT[i].tim);
+        }
+        else if(i<(PVTPnt/4.*3))
+        {
+            mPVT[i].tim = (T-Ts) / 4.0f;
+            mPVT[i].vel = cnt_v_high - cnt_a*(i-(PVTPnt/4.*2)+1)*mPVT[i].tim;
+            mPVT[i].pos = PosWant/2.*K_cnt + cnt_v_high * (i-(PVTPnt/4.*2)+1)*mPVT[i].tim - 0.5f * cnt_a * (i-(PVTPnt/4.*2)+1)*mPVT[i].tim * (i-(PVTPnt/4.*2)+1)*mPVT[i].tim;
+        }
+        else
+        {
+            mPVT[i].tim = Ts/4;
+            mPVT[i].vel = cnt_v_low;
+            mPVT[i].pos = (PosWant -contact_phase/2.)  * K_cnt + cnt_v_low * mPVT[i].tim * (i-(PVTPnt/4.f*3)+1);
+        }
+//        if(!index)
+//            qDebug()<<QString("mPVT[%1].pos = %2 , mPVT[%1].vel = %3 , mPVT[%1].tim=%4").arg(i).arg(mPVT[i].pos).arg(mPVT[i].vel).arg(mPVT[i].tim);
+    }
+
+//    float contact_phase = 3.141592654f/3.f;
+//    float v_low =  contact_phase/2.0f/(Ts/2.0f);
+//    float v_high = (2*pi-contact_phase)/(T-Ts);
+////    if(!index)
+////        qDebug()<<QString("Ts = %1 , v_low = %2 , v_high = %3").arg(Ts).arg(v_low).arg(v_high);
+//    float cnt_v_low  = v_low  * Leg[index]->EncoderCnt * 4 * Leg[index]->Leg_Reduction/2./pi;
+//    float cnt_v_high = v_high * Leg[index]->EncoderCnt * 4 * Leg[index]->Leg_Reduction/2./pi;
+//    for(int i=0;i<PVTPnt;i++)
+//    {
+//        if(i<(PVTPnt/4.))
+//        {
+//            mPVT[i].tim = Ts/4;
+//            mPVT[i].vel = cnt_v_low;
+//            mPVT[i].pos = cnt_v_low*(i+1)*mPVT[i].tim;
+
+//        }
+//        else if(i<(PVTPnt/4.*3))
+//        {
+//            mPVT[i].tim = (T-Ts) / 4.0f;
+//            mPVT[i].vel = cnt_v_high;
+//            mPVT[i].pos = contact_phase/2 * Leg[index]->EncoderCnt*4*Leg[index]->Leg_Reduction/2./pi + cnt_v_high * mPVT[i].tim * (i-1);
+//        }
+//        else
+//        {
+//            mPVT[i].tim = Ts/4;
+//            mPVT[i].vel = cnt_v_low;
+//            mPVT[i].pos = (2*pi - contact_phase/2) * Leg[index]->EncoderCnt*4*Leg[index]->Leg_Reduction/2./pi + cnt_v_low * (i-5) * mPVT[i].tim;
+//        }
+
+//    }
 }

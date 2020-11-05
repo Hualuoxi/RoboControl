@@ -16,7 +16,7 @@ void Motor::initMotor()
     QThread::msleep(10);
     mDriver->ExeCMD("PX", 0);
     QThread::msleep(10);
-    mDriver->ExeCMD("SP", (int)(2000*Kv_Encoder));
+    mDriver->ExeCMD("SP", (int)(4000*Kv_Encoder));
     QThread::msleep(10);
     mDriver->ExeCMD("SF", 0);
     mDriver->SetPVTPDOMapping();
@@ -75,6 +75,10 @@ void Motor::SetRunByPosSpd(float speed)
     mDriver->ExeCMD("BG");
 }
 
+void Motor::SendSYNC()
+{
+    mDriver->SYNC();
+}
 void Motor::RunByPosA(int position)
 {
     mDriver->ExeCMD("PA", position);
@@ -109,6 +113,10 @@ void Motor::Begin()
     mDriver->ExeCMD("BG");
 }
 
+void Motor::ClearProgram()
+{
+    mDriver->ExeCMD("CP");
+}
 void Motor::QueryCur()
 {
     mDriver->QueryCMD("IQ");
@@ -128,6 +136,14 @@ void Motor::QuerySpd()
 {
     mDriver->QueryCMD("VX");
 }
+
+void Motor::ResetPVT()
+{
+    PVTQueue.clear();
+//    setRPtr(1);
+//    setWPtr(1);
+}
+
 
 int Motor::Rad2Cnt(float red)
 {

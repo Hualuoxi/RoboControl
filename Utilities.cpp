@@ -22,3 +22,23 @@ void Char2Float(float* f, unsigned char* buff)
     f_c[1] = *(short int*)(buff + 2);
     *f = *(float *)f_c;
 }
+
+u16 CRC_CHECK(u8 * Buf, u8 CRC_CNT)
+{
+    u16 CRC_Temp;
+    u8 i, j;
+    CRC_Temp = 0xffff;
+
+    for (i = 0; i < CRC_CNT; i++)
+    {
+        CRC_Temp ^= Buf[i];
+        for (j = 0; j < 8; j++)
+        {
+            if (CRC_Temp & 0x01)
+                CRC_Temp = (CRC_Temp >> 1 ) ^ 0xa001;
+            else
+                CRC_Temp = CRC_Temp >> 1;
+        }
+    }
+    return(CRC_Temp);
+}

@@ -120,6 +120,8 @@ enum MOVESTATUS
     TURNLEFT,
     ROTATION,
     BIPEDRUN,
+    READY,
+    WALK,
 };
 
 
@@ -172,6 +174,10 @@ struct PVTPlanningParam
     float T[6] = { 2000,2000,2000,2000,2000,2000 };
     float Tb[6] = { 2000,2000,2000,2000,2000,2000 };
     float Te[6] = { 2000,2000,2000,2000,2000,2000 };
+
+    float Ts[6] = { 0.6,0.6,0.6,0.6,0.6,0.6 };
+    float Tsb[6] = { 0.6,0.6,0.6,0.6,0.6,0.6 };
+    float Tse[6] = { 0.4,0.4,0.4,0.4,0.4,0.4 };
     // 步态循环次数
     int StepNum[6] = {1,1,1,1,1,1};
 
@@ -182,21 +188,20 @@ struct PVTPlanningParam
     int StepAcc[6]={0,0,0,0,0,0};
     int StepDcc[6]={0,0,0,0,0,0};
     bool KeepPD[6]={false,true,true,false,false,true};
+
+    char MoveStatus = 0;
+
 };
 typedef PVTPlanningParam PVTPP;
 
 struct _CMD_FRAME
 {
-   unsigned char header[2];
-   unsigned char cmd[2]; // command
-   char cmd_para[4];     // parameters of the command, [0]: coasen direction; [1]: dir_1, 1 or -1; [2]: dir_2, 1 or -1;
-   signed int coasen_sp; // coasening speed
-   signed int move_sp;   // moving speed
-   signed short turn_pa; // pa for turning angle
-   signed short check;
+   u8 Header[2];
+   u8 Cmd[2]; // command
+   s16 Data[3];     // parameters of the command, [0]: coasen direction; [1]: dir_1, 1 or -1; [2]: dir_2, 1 or -1;
+   s16 Check;
 };
 typedef _CMD_FRAME CMD_frame;
-
 #pragma pack()
 
 

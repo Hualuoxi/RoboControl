@@ -13,7 +13,8 @@ public:
     void InitElmo();
     void InitPVT();
     void SetPVTPDOMapping();
-    void SetFeedbackPDOMapping() ;
+    void SetFeedbackPDOMapping();
+    void SYNC();
     void ExeCMD(char const* cmd);
     void ExeCMD(char const* cmd, int value, short index = 0);
     void ExeCMD(char const* cmd, float value, short index = 0);

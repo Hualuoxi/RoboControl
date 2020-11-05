@@ -22,6 +22,7 @@ signals:
     void setMotorCur_sig(u8 id,float value);
     void setMotorSpd_sig(u8 id,float value);
     void setMotorPos_sig(u8 id,int value);
+    void setMotorPV_sig(u8 id,int pos , int vel);
     void setPVT_sig(u8 id ,int pos,s16 Hptr,s16 Tptr);
     void sendPVTPrama_sig(u8 id,s16 Wptr,s16 Rptr);
 public slots:
@@ -40,6 +41,8 @@ enum CAN_BITRATE
     R5K=1,R10K,R20K,R50K,R100K,R125K,R250K,R500K,R800K,R1M
 };
 
+public:
+    CAN_RcvThread *mRcvThread;
 public:
     CAN(const char * CANx);
     ~CAN();
@@ -84,7 +87,7 @@ public:
     void stopRcv();
 private:
 
-    CAN_RcvThread *mRcvThread;
+
     QThread *mQThread;
     int s;
     const char * mCAN;
@@ -104,18 +107,8 @@ private:
 signals:
     void startRcvThread(int s);
     void stopRcvThread();
-    void setMotorCur_sig(u8 id,float value);
-    void setMotorPos_sig(u8 id,int value);
-    void setMotorSpd_sig(u8 id,float value);
-    void setPVT_sig(u8 id ,int pos,s16 Hptr,s16 Tptr);
-    void sendPVTPrama_sig(u8 id,s16 Wptr,s16 Rptr);
 public slots:
     void Transmit(can_frame pFrame);
-    void setMotorCur_slot(u8 id,float value);
-    void setMotorPos_slot(u8 id,int value);
-    void setMotorSpd_slot(u8 id,float value);
-    void setPVT_slot(u8 id ,int pos,s16 Hptr,s16 Tptr);
-    void sendPVTPrama_slot(u8 id,s16 Wptr,s16 Rptr);
 
 };
 

@@ -55,7 +55,7 @@ void Driver::SetPVTPDOMapping()
     frame.data[7] = 0x20;
     emit sendCANMsg_sig(frame);
 
-    //0x1401(2)设置为255
+    //0x1401(2)设置为255 异步触发 接收到数据即处理
     memset(&frame, 0, sizeof(can_frame));
     frame.can_id = mCANId - ELMO_CTRL_ID_BASE + 0x600;
     frame.can_dlc = 8;
@@ -63,7 +63,7 @@ void Driver::SetPVTPDOMapping()
     frame.data[1] = 0x02;
     frame.data[2] = 0x14;
     frame.data[3] = 0x02;
-    frame.data[4] = 0xFF;
+    frame.data[4] = 0xff;
     emit sendCANMsg_sig(frame);
 
     //0x1601(0)设置为1
@@ -113,7 +113,7 @@ void Driver::SetFeedbackPDOMapping()
     frame.data[7] = 0x60;
     emit sendCANMsg_sig(frame);
 
-    //0x1A02(2)设置为0x2F110010，即PVT buffer head pointer
+    //0x1A02(2)设置为0x606c0020，即Velocity actual value
     memset(&frame, 0, sizeof(can_frame));
     frame.can_id = mCANId - ELMO_CTRL_ID_BASE + 0x600;
     frame.can_dlc = 8;
@@ -121,25 +121,25 @@ void Driver::SetFeedbackPDOMapping()
     frame.data[1] = 0x02;
     frame.data[2] = 0x1A;
     frame.data[3] = 0x02;
-    frame.data[4] = 0x10;
+    frame.data[4] = 0x20;
     frame.data[5] = 0x00;
-    frame.data[6] = 0x11;
-    frame.data[7] = 0x2F;
+    frame.data[6] = 0x6c;
+    frame.data[7] = 0x60;
     emit sendCANMsg_sig(frame);
 
-    //0x1A02(3)设置为0x2F120010，即PVT buffer tail pointer
-    memset(&frame, 0, sizeof(can_frame));
-    frame.can_id = mCANId - ELMO_CTRL_ID_BASE + 0x600;
-    frame.can_dlc = 8;
-    frame.data[0] = 0x23;
-    frame.data[1] = 0x02;
-    frame.data[2] = 0x1A;
-    frame.data[3] = 0x03;
-    frame.data[4] = 0x10;
-    frame.data[5] = 0x00;
-    frame.data[6] = 0x12;
-    frame.data[7] = 0x2F;
-    emit sendCANMsg_sig(frame);
+//    //0x1A02(3)设置为0x2F120010，即PVT buffer tail pointer
+//    memset(&frame, 0, sizeof(can_frame));
+//    frame.can_id = mCANId - ELMO_CTRL_ID_BASE + 0x600;
+//    frame.can_dlc = 8;
+//    frame.data[0] = 0x23;
+//    frame.data[1] = 0x02;
+//    frame.data[2] = 0x1A;
+//    frame.data[3] = 0x03;
+//    frame.data[4] = 0x10;
+//    frame.data[5] = 0x00;
+//    frame.data[6] = 0x12;
+//    frame.data[7] = 0x2F;
+//    emit sendCANMsg_sig(frame);
 
     //0x1802(2)设置为x，即xms反馈一次位置和速度，
     //也可以设置成发送一个SYNC反馈一次
@@ -150,7 +150,7 @@ void Driver::SetFeedbackPDOMapping()
     frame.data[1] = 0x02;
     frame.data[2] = 0x18;
     frame.data[3] = 0x02;
-    frame.data[4] = 1;//100ms发送一次
+    frame.data[4] = 0x01;
     emit sendCANMsg_sig(frame);
 
     //0x1A02(0)设置为3
@@ -161,7 +161,7 @@ void Driver::SetFeedbackPDOMapping()
     frame.data[1] = 0x02;
     frame.data[2] = 0x1A;
     frame.data[3] = 0x00;
-    frame.data[4] = 0x03;
+    frame.data[4] = 0x02;
     emit sendCANMsg_sig(frame);
 
 
@@ -195,6 +195,16 @@ void Driver::ExeCMD(int pos,int vel, int time)
     frame.data[6] = ((vel >> 16) & 0x000000FF);
     //时间
     frame.data[7] = (time & 0x000000FF);
+    emit sendCANMsg_sig(frame);
+}
+
+
+void Driver::SYNC()
+{
+    can_frame frame;
+    memset(&frame, 0, sizeof(can_frame));
+    frame.can_id = 0x80;
+    frame.can_dlc = 0;
     emit sendCANMsg_sig(frame);
 }
 

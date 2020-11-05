@@ -1,16 +1,39 @@
 #include "robot.h"
 
+
 Robot::Robot(QObject * parent)
 {
     InitRobot();
     ConnetSlots();
     mTimer = new QTimer();
-    mTimer->setInterval(50);
-    connect(mTimer,&QTimer::timeout,this,&Robot::setAngle_slot);
-    //mTimer->start();
-
+    mTimer->setInterval(100);
+    connect(mTimer,&QTimer::timeout,this,&Robot::SavePv_slot);
+    
+#if 0
+    mTimer->start();
+    QDir csvdir;
+    QString currentDir = csvdir.currentPath();
+    if(!csvdir.exists("csv"))
+    {
+        csvdir.mkdir("csv");
+    }
+    CurData = new QFile(currentDir+"/csv/vel-11031131.csv");
+    if(CurData->open(QFile::WriteOnly | QFile::Truncate))
+    {
+        QTextStream CurOut(CurData);
+        CurOut<<"pos[0],"<<"vel[0],"
+//              <<"poswant[0],"<<"velwant[0],"
+              <<"pos[1],"<<"vel[1],"
+                <<"pos[2],"<<"vel[2],"
+                  <<"pos[4],"<<"vel[4],"
+//              <<"poswant[1],"<<"velwant[1],"
+              <<"\n";
+    }
+#endif
+    
 }
 
+ 
 Robot::~Robot()
 {
     if(mGyroQThread)
@@ -28,6 +51,7 @@ Robot::~Robot()
     {
         Leg[i]->deleteLater();
     }
+    CurData->close();
 }
 
 
@@ -61,7 +85,7 @@ void Robot::InitRobot()
         Leg[i]=new Motor((i+1),POSITON_MODE);
 //        qDebug()<<QString("Leg[%1]->Kv_Encoder : %2").arg(i).arg(Leg[i]->Kv_Encoder);
         connect(Leg[i],&Motor::sendCANMsg_sig,mCAN,&CAN::Transmit);
-        if(i==2)
+        if(i==4)
         {
             Leg[i]->EncoderCnt = 512;
             Leg[i]->Kv_Encoder= Leg[i]->EncoderCnt * 4./60;
@@ -79,8 +103,6 @@ void Robot::InitRobot()
     connect(mRoboDriverQThread,&QThread::finished,mRoboDriver,&QObject::deleteLater);
     connect(this,&Robot::run_sig,mRoboDriver,&RoboDriver::run);
     mRoboDriverQThread->start();
-
-
 }
 
 void Robot::run()
@@ -101,37 +123,195 @@ void Robot::ConnetSlots()
     qRegisterMetaType<s16>("s16");
     connect(this,&Robot::sendCANMsg_sig,mCAN,&CAN::Transmit);
     connect(this,&Robot::TranClinet_sig,mClient,&Clinet::TranClinet_slot);
-    connect(mClient,&Clinet::shutDownApp,qApp,&QCoreApplication::quit);
+    //connect(mClient,&Clinet::shutDownApp,qApp,&QCoreApplication::quit);
 
-    connect(mCAN,&CAN::setMotorCur_sig,this,&Robot::setMotorCur_slot);
-    connect(mCAN,&CAN::setMotorPos_sig,this,&Robot::setMotorPos_slot);
-    connect(mCAN,&CAN::setMotorSpd_sig,this,&Robot::setMotorSpd_slot);
-    connect(mCAN,&CAN::setPVT_sig,this,&Robot::setPVT_slot);
-    connect(mCAN,&CAN::sendPVTPrama_sig,this,&Robot::sendPVTPrama_slot);
+    connect(mClient,&Clinet::RcvClinet_sig,this,&Robot::RcvDHPClinet_slot);
 
+    connect(this,&Robot::PVTGoForward_sig,mRoboDriver,&RoboDriver::PVTGoForward);
+    connect(this,&Robot::PVTWalkForward_sig,mRoboDriver,&RoboDriver::PVTWalkForward);
+    connect(this,&Robot::PVTRun_sig,mRoboDriver,&RoboDriver::PVTRun);
+    connect(this,&Robot::PVTReady_sig,mRoboDriver,&RoboDriver::PVTReady);
+    connect(this,&Robot::PVTRotate_sig,mRoboDriver,&RoboDriver::PVTRotate);
+    connect(this,&Robot::PVTWalkBack_sig,mRoboDriver,&RoboDriver::PVTWalkBack);
+    connect(this,&Robot::PVTTurnLeft_sig,mRoboDriver,&RoboDriver::PVTTurnLeft);
+    connect(this,&Robot::PVTTurnRight_sig,mRoboDriver,&RoboDriver::PVTTurnRight);
+    connect(this,&Robot::SearchZero_sig,mRoboDriver,&RoboDriver::SearchZero);
+
+    connect(this->mCAN->mRcvThread,&CAN_RcvThread::sendPVTPrama_sig,this,&Robot::sendPVTPrama_slot);
+    connect(this->mCAN->mRcvThread,&CAN_RcvThread::setMotorCur_sig,this,&Robot::setMotorCur_slot);
+    connect(this->mCAN->mRcvThread,&CAN_RcvThread::setMotorSpd_sig,this,&Robot::setMotorSpd_slot);
+    connect(this->mCAN->mRcvThread,&CAN_RcvThread::setMotorPos_sig,this,&Robot::setMotorPos_slot);
+    connect(this->mCAN->mRcvThread,&CAN_RcvThread::setMotorPV_sig,this,&Robot::setMotorPV_slot);
+    connect(this->mCAN->mRcvThread,&CAN_RcvThread::setPVT_sig,this,&Robot::setPVT_slot);
 }
+
+
+void Robot::RcvDHPClinet_slot(QByteArray a)
+{
+    CMD_frame *cmdInfo = (CMD_frame*)a.data();
+    if(cmdInfo->Header[0] == 'R' && cmdInfo->Header[1] == 'H')
+    {
+        if(cmdInfo->Cmd[0] == 'G' && cmdInfo->Cmd[1] == 'F')
+        {
+            startRecord = true;
+            mRoboDriver->setStopRun(false);
+            for(int i =0; i<6 ;i++)
+            {
+               Leg[i]->setPVTflag(true);
+            }
+            mRoboDriver->setSuspension_count(((float)(cmdInfo->Data[2]))/10.);
+            emit PVTWalkForward_sig(cmdInfo->Data[1], cmdInfo->Data[0]);
+            return;
+        }
+        if(cmdInfo->Cmd[0] == 'A' && cmdInfo->Cmd[1] == 'R')
+        {
+            mRoboDriver->setStopRun(false);
+            for(int i =0; i<6 ;i++)
+            {
+               Leg[i]->setPVTflag(true);
+            }
+            emit PVTRun_sig(1000,cmdInfo->Data[1],cmdInfo->Data[0],100);
+            return;
+        }
+        if(cmdInfo->Cmd[0] == 'G' && cmdInfo->Cmd[1] == 'B')
+        {
+            mRoboDriver->setStopRun(false);
+            for(int i =0; i<6 ;i++)
+            {
+               Leg[i]->setPVTflag(true);
+            }
+            emit PVTWalkBack_sig(cmdInfo->Data[1], cmdInfo->Data[0]);
+            return;
+        }
+        if(cmdInfo->Cmd[0] == 'R' && cmdInfo->Cmd[1] == 'O')
+        {
+            mRoboDriver->setStopRun(false);
+            for(int i =0; i<6 ;i++)
+            {
+               Leg[i]->setPVTflag(true);
+            }
+            emit PVTRotate_sig(cmdInfo->Data[1], cmdInfo->Data[0]);
+            return;
+        }
+        if(cmdInfo->Cmd[0] == 'T' && cmdInfo->Cmd[1] == 'R')
+        {
+            mRoboDriver->setStopRun(false);
+            for(int i =0; i<6 ;i++)
+            {
+               Leg[i]->setPVTflag(true);
+            }
+            emit PVTTurnRight_sig(cmdInfo->Data[1], cmdInfo->Data[0]);
+            return;
+        }
+        if(cmdInfo->Cmd[0] == 'T' && cmdInfo->Cmd[1] == 'L')
+        {
+            mRoboDriver->setStopRun(false);
+            for(int i =0; i<6 ;i++)
+            {
+               Leg[i]->setPVTflag(true);
+            }
+            emit PVTTurnLeft_sig(cmdInfo->Data[1], cmdInfo->Data[0]);
+            return;
+        }
+        if(cmdInfo->Cmd[0] == 'S' && cmdInfo->Cmd[1] == 'T')
+        {
+
+            mRoboDriver->setStopRun(true);
+            startRecord = false;
+            for(int i =0; i<6 ;i++)
+            {
+                Leg[i]->setPVTflag(false);
+                Leg[i]->ResetPVT();
+            }
+            return;
+        }
+        if(cmdInfo->Cmd[0] == 'R' && cmdInfo->Cmd[1] == 'E')
+        {
+
+            startRecord = false;
+            BroadCast->Release();
+
+            return;
+        }
+        if(cmdInfo->Cmd[0] == 'R' && cmdInfo->Cmd[1] == 'D')
+        {
+            mRoboDriver->setStopRun(false);
+            for(int i =0; i<6 ;i++)
+            {
+               Leg[i]->setPVTflag(true);
+            }
+            emit PVTReady_sig(cmdInfo->Data[0]/10.,2000);
+            return;
+        }
+        if(cmdInfo->Cmd[0] == 'S' && cmdInfo->Cmd[1] == 'Z')
+        {
+            emit SearchZero_sig();
+            return;
+        }
+    }
+}
+
 
 void Robot::sendPVTPrama_slot(u8 id,s16 Wptr,s16 Rptr)
 {
     PVT_Prama temp;
 
     Leg[id-1]->PVTPrama_Mutex.lock();
-    if(!Leg[id-1]->PVTQueue.empty())
+    if(!Leg[id-1]->PVTQueue.empty()&&Leg[id-1]->getPVTflag())
     {
         temp = Leg[id-1]->PVTQueue.dequeue();
         Leg[id-1]->SendPVT((int)(temp.pos),(int)(temp.vel),(u8)temp.tim);
+        Leg[id-1]->setMotorPosWant((int)(temp.pos));
+        Leg[id-1]->setMotorSpdWant((int)(temp.vel));
+//        if(id==1)
+//            qDebug()<<QString("pos = %1 , vel = %2 , tim = %3").arg(temp.pos).arg(temp.vel).arg(temp.tim);
+    }
+    else if (Leg[id-1]->getPVTflag())
+    {
+        qDebug() <<QString("Leg[%1] queue is empty!").arg(id-1);
     }
     Leg[id-1]->PVTPrama_Mutex.unlock();
     Leg[id-1]->setRPtr(Rptr);
     Leg[id-1]->setWPtr(Wptr);
 }
 
-void Robot::setAngle_slot()
+void Robot::SaveCur_slot()
 {
-    AngleNow=mGyro->getAngleNow();
-  qDebug()<<"Yaw: "<<AngleNow.yaw<<" Roll:"<<AngleNow.roll<<" Pitch:"<<AngleNow.pitch;
+
+    for(int i =0; i<6 ;i++)
+    {
+       Leg[i]->QueryCur();
+    }
+    if(startRecord)
+    {
+        QTextStream CurOut(CurData);
+        QTime mytime=QTime::currentTime();
+        QString strTime = mytime.toString("hh-mm-ss-zzz");
+        CurOut<<Leg[0]->getMotorCur()<<","
+              <<Leg[1]->getMotorCur()<<","
+              <<Leg[2]->getMotorCur()<<","
+              <<Leg[3]->getMotorCur()<<","
+              <<Leg[4]->getMotorCur()<<","
+              <<Leg[5]->getMotorCur()<<","
+              <<strTime<<"\n";
+    }
 }
 
+void Robot::SavePv_slot()
+{
+
+    BroadCast->SendSYNC();
+    QTextStream CurOut(CurData);
+    CurOut<<Leg[0]->getMotorPos()<<","
+          <<Leg[0]->getMotorSpd()<<","
+          <<Leg[1]->getMotorPos()<<","
+          <<Leg[1]->getMotorSpd()<<","
+          <<Leg[2]->getMotorPos()<<","
+          <<Leg[2]->getMotorSpd()<<","
+          <<Leg[4]->getMotorPos()<<","
+          <<Leg[4]->getMotorSpd()<<","
+          <<"\n";
+}
 
 /**l
  * @brief set Motor Current
@@ -153,9 +333,21 @@ void Robot::setMotorPos_slot(u8 id,int value)
 //    qDebug()<<QString("Leg[%1]->setMotorPos(%2)").arg(id).arg(value);
     Leg[id-1]->setMotorPos(value);
 }
+/**
+ * @brief set Motor Pos and Vel
+ * @param Motor id
+ * @param Current
+ */
+void Robot::setMotorPV_slot(u8 id,int pos , int vel)
+{
+//    qDebug()<<QString("Leg[%1]->setMotorPos(%2)").arg(id).arg(value);
+    Leg[id-1]->setMotorPos(pos);
+    Leg[id-1]->setMotorSpd(vel);
+
+}
 
 /**
- * @brief set Motor Current
+ * @brief set Motor Speed
  * @param Motor id
  * @param Current
  */
